@@ -7,8 +7,12 @@ class RiverSwimEnv(gym.Env):
     def __init__(self,
             n=6,
             max_steps=20,
-            p_swim=[0.35, 0.6],
-            rewards=[0.005, 1]
+            swim_probs={
+                "bottom": [0.0, 0.4, 0.6],
+                "middle": [0.05, 0.6, 0.35],
+                "top":    [0.4, 0.6, 0.0],
+            },
+            rewards=[0.005, 1],
         ):
         
         super().__init__()
@@ -26,12 +30,10 @@ class RiverSwimEnv(gym.Env):
         else:
             raise ValueError('Invalid reward specification')
 
-        if type(p_swim) in [float, int]:
-            self.p_swim = [p_swim, p_swim]
-        elif type(p_swim) == list and len(p_swim) == 2:
-            self.p_swim = p_swim
-        else:
+        if type(swim_probs) != dict or swim_probs.keys() != {"bottom", "middle", "top"}:
             raise ValueError('Invalid probability of swimming')
+        self.swim_probs = swim_probs
+
 
         # State
         self.pos = None
@@ -52,10 +54,16 @@ class RiverSwimEnv(gym.Env):
         top = self.observation_space.n - 1
 
         # Get next state
+        if self.pos == bottom:
+            swim_probs = self.swim_probs["bottom"]
+        elif self.pos == top:
+            swim_probs = self.swim_probs["top"]
+        else:
+            swim_probs = self.swim_probs["middle"]
+
         direction = 0
         if action == 1:
-            p_swim = self.p_swim[0] if self.pos == 0 else self.p_swim[1]
-            direction = np.random.choice(2, p=[1 - p_swim, p_swim])
+            direction = np.random.choice(len(swim_probs), p=swim_probs)
 
         direction = direction * 2 - 1
 
