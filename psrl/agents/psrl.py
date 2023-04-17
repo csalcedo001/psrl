@@ -1,6 +1,7 @@
 import numpy as np
 
 from .agent import Agent
+from .utils import solve_tabular_mdp
 
 class PSRLAgent(Agent):
     def __init__(self, env, gamma, kappa, mu, lambd, alpha, beta, max_iter):
@@ -83,25 +84,4 @@ class PSRLAgent(Agent):
 
 
         # Solve for optimal policy
-        s_idx = np.arange(n_s)
-        
-        ones = np.eye(n_s)
-        pi = np.zeros(n_s, dtype=int)
-        
-        p_r = np.einsum('ijk, ijk -> ij', p, r)
-        
-        for i in range(self.max_iter):
-            # Solve for Q values
-            v = np.linalg.solve(ones - self.gamma * p[s_idx, pi, :], p_r[s_idx, pi])
-            q = p_r + self.gamma * np.einsum('ijk, k -> ij', p, v)
-
-            # Get greedy policy - break ties at random
-            pi_ = np.array([np.random.choice(np.argwhere(qs == np.amax(qs))[0]) \
-                            for qs in q])
-            
-            if np.prod(pi_ == pi) == 1:
-                break
-            else:
-                pi = pi_
-
-        self.pi = pi
+        self.pi, _ = solve_tabular_mdp(p, r, self.gamma, self.max_iter)
