@@ -1,7 +1,11 @@
 import numpy as np
 
-class PSRLAgent():
+from .agent import Agent
+
+class PSRLAgent(Agent):
     def __init__(self, env, gamma, kappa, mu, lambd, alpha, beta, max_iter):
+        super().__init__()
+
         self.env = env
         self.gamma = gamma
         self.max_iter = max_iter
