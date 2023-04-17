@@ -57,3 +57,6 @@ class RandomMDPEnv(gym.Env):
         self.transitions = np.random.dirichlet(self.alpha, size=(n_s, n_a))
         self.r_var = np.random.gamma(1, 1, size=(n_s, n_a, n_s))
         self.r_mean = np.random.normal(1, 1, size=(n_s, n_a, n_s))
+    
+    def get_p_and_r(self):
+        return self.transitions, self.r_mean

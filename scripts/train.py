@@ -1,7 +1,9 @@
 import argparse
 
 from psrl.envs import RiverSwimEnv, RandomMDPEnv
-from psrl.agents import PSRLAgent, RandomAgent
+from psrl.agents import PSRLAgent, RandomAgent, OptimalAgent
+from psrl.agents.utils import solve_tabular_mdp
+from psrl.utils import rollout
 
 
 # Define argument parser
@@ -70,3 +72,25 @@ for episode in range(args.episodes):
             break
             
         iteration += 1
+
+
+
+# Get optimal policy
+oracle = OptimalAgent(env, gamma=0.9, max_iter=1000)
+
+
+# Rollouts policies
+rollout_episodes = 100
+
+agent_trajectories = rollout(env, agent, episodes=rollout_episodes)
+oracle_trajectories = rollout(env, oracle, episodes=rollout_episodes)
+
+# Compute regret
+regret = 0
+for k in range(rollout_episodes):
+    agent_reward_per_episode = sum([r for _, _, r, _ in agent_trajectories[k]])
+    oracle_reward_per_episode = sum([r for _, _, r, _ in oracle_trajectories[k]])
+
+    regret += oracle_reward_per_episode - agent_reward_per_episode
+
+print("REGRET:", regret)
