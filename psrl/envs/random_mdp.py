@@ -60,4 +60,4 @@ class RandomMDPEnv(Env):
         self.r_mean = np.random.normal(1, 1, size=(n_s, n_a, n_s))
     
     def get_p_and_r(self):
-        return self.transitions, self.r_mean
+        return self.transitions[:], self.r_mean[:]

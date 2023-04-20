@@ -2,7 +2,6 @@ import argparse
 
 from psrl.envs import RiverSwimEnv, RandomMDPEnv
 from psrl.agents import PSRLAgent, RandomAgent, OptimalAgent
-from psrl.agents.utils import solve_tabular_mdp
 from psrl.utils import rollout
 
 

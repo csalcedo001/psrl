@@ -1,5 +1,5 @@
 class Agent():
-    def __init__(self):
+    def __init__(self, env, config):
         pass
 
     def act(self, state):
