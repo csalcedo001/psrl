@@ -6,6 +6,12 @@ from .envs import (
     FourRoomGridworldEnv,
 )
 
+from .agents import (
+    RandomAgent,
+    PSRLAgent,
+    OptimalAgent,
+)
+
 
 def rollout(env, agent, episodes):
     trajectories = []
@@ -36,4 +42,10 @@ env_name_map = {
     'fourroom': FourRoomGridworldEnv,
     'riverswim': RiverSwimEnv,
     'randommdp': RandomMDPEnv,
+}
+
+agent_name_map = {
+    'random_agent': RandomAgent,
+    'psrl': PSRLAgent,
+    'optimal': OptimalAgent,
 }

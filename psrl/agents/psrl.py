@@ -4,18 +4,23 @@ from .agent import Agent
 from .utils import solve_tabular_mdp
 
 class PSRLAgent(Agent):
-    def __init__(self, env, gamma, kappa, mu, lambd, alpha, beta, max_iter):
-        super().__init__()
+    # def __init__(self, env, gamma, kappa, mu, lambd, alpha, beta, max_iter):
+    def __init__(self, env, config):
+        Agent.__init__(self, env, config)
+
+        mu = config.mu
+        lambd = config.lambd
+        alpha = config.alpha
+        beta = config.beta
 
         self.env = env
-        self.gamma = gamma
-        self.max_iter = max_iter
+        self.config = config
 
         n_s = env.observation_space.n
         n_a = env.action_space.n
 
         # Initialize posterior distributions
-        self.p_dist = kappa * np.ones((n_s, n_a, n_s))
+        self.p_dist = config.kappa * np.ones((n_s, n_a, n_s))
         self.r_dist = np.tile([mu, lambd, alpha, beta], (n_s, n_a, n_s, 1))
 
         self.pi = None
@@ -84,4 +89,4 @@ class PSRLAgent(Agent):
 
 
         # Solve for optimal policy
-        self.pi, _ = solve_tabular_mdp(p, r, self.gamma, self.max_iter)
+        self.pi, _ = solve_tabular_mdp(p, r, self.config.gamma, self.config.max_iter)

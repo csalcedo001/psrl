@@ -3,13 +3,13 @@ import argparse
 from psrl.envs import RiverSwimEnv, RandomMDPEnv
 from psrl.agents import PSRLAgent, RandomAgent, OptimalAgent
 from psrl.config import get_env_config, get_agent_config
-from psrl.utils import rollout, env_name_map
+from psrl.utils import rollout, env_name_map, agent_name_map
 
 
 
 # Define argument parser
 parser = argparse.ArgumentParser()
-parser.add_argument('--agent', type=str, default='random', help='Agent to use')
+parser.add_argument('--agent', type=str, default='random_agent', help='Agent to use')
 parser.add_argument('--env', type=str, default='riverswim', help='Environment to use')
 parser.add_argument('--episodes', type=int, default=100, help='Number of episodes to run')
 
@@ -25,26 +25,15 @@ if args.env not in env_name_map:
 
 env_class = env_name_map[args.env]
 env_config = get_env_config(args.env)
-print(env_config)
 env = env_class(env_config)
 
 
-# TODO: provide agent arguments via agent_config
-if args.agent == 'random':
-    agent = RandomAgent(env)
-elif args.agent == 'psrl':
-    agent = PSRLAgent(
-        env,
-        gamma=0.9,
-        kappa=1,
-        mu=0,
-        lambd=1,
-        alpha=1,
-        beta=1,
-        max_iter=1000,
-    )
-else:
+if args.agent not in agent_name_map:
     raise ValueError('Agent not supported')
+
+agent_class = agent_name_map[args.agent]
+agent_config = get_agent_config(args.agent)
+agent = agent_class(env, agent_config)
 
 
 
@@ -76,7 +65,8 @@ for episode in range(args.episodes):
 
 
 # Get optimal policy
-oracle = OptimalAgent(env, gamma=0.9, max_iter=1000)
+oracle_config = get_agent_config('optimal')
+oracle = OptimalAgent(env, oracle_config)
 
 
 # Rollouts policies

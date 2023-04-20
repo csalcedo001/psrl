@@ -1,0 +1,7 @@
+gamma: 0.9
+kappa: 1.0
+mu: 0.0
+lambd: 1.0
+alpha: 1.0
+beta: 1.0
+max_iter: 100
