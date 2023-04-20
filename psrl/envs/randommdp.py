@@ -4,16 +4,19 @@ import numpy as np
 from psrl.envs import Env
 
 class RandomMDPEnv(Env):
-    def __init__(self, n_states, n_actions, max_steps=10000):
+    def __init__(self, args):
         Env.__init__(self)
 
-        self.action_space = spaces.Discrete(n_actions)
-        self.observation_space = spaces.Discrete(n_states)
+        self.args = args
 
-        self.max_steps = max_steps
+        self.action_space = spaces.Discrete(args.n_actions)
+        self.observation_space = spaces.Discrete(args.n_states)
+
+        self.max_steps = args.max_steps
+        print(args.max_steps)
 
         # For Diritchlet distribution
-        self.alpha = np.ones((n_states)) * 1. / n_states
+        self.alpha = np.ones((args.n_states)) * 1. / args.n_states
 
         self.transitions = None
         self.rewards = None

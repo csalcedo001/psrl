@@ -5,23 +5,18 @@ from psrl.envs import Env
 
 
 class RiverSwimEnv(Env):
-    def __init__(self,
-            n=6,
-            max_steps=20,
-            swim_probs={
-                "bottom": [0.0, 0.4, 0.6],
-                "middle": [0.05, 0.6, 0.35],
-                "top":    [0.4, 0.6, 0.0],
-            },
-            rewards=[0.005, 1],
-        ):
-        
+    def __init__(self, args):
         Env.__init__(self)
 
-        self.action_space = spaces.Discrete(2)
-        self.observation_space = spaces.Discrete(n)
+        self.args = args
 
-        self.max_steps = max_steps
+        rewards = args.rewards
+        swim_probs = dict(args.swim_probs)
+
+        self.action_space = spaces.Discrete(2)
+        self.observation_space = spaces.Discrete(args.n)
+
+        self.max_steps = args.max_steps
         self.rewards = rewards
 
         if type(rewards) in [float, int]:
@@ -56,11 +51,11 @@ class RiverSwimEnv(Env):
 
         # Get next state
         if self.pos == bottom:
-            swim_probs = self.swim_probs["bottom"]
+            swim_probs = self.args.swim_probs["bottom"]
         elif self.pos == top:
-            swim_probs = self.swim_probs["top"]
+            swim_probs = self.args.swim_probs["top"]
         else:
-            swim_probs = self.swim_probs["middle"]
+            swim_probs = self.args.swim_probs["middle"]
 
         direction = -1
         if action == 1:
@@ -72,13 +67,13 @@ class RiverSwimEnv(Env):
         # Get reward
         reward = 0
         if action == 0 and self.pos == bottom and next_pos == bottom:
-            reward = self.rewards[0]
+            reward = self.args.rewards[0]
         elif action == 1 and self.pos == top and next_pos == top:
-            reward = self.rewards[1]
+            reward = self.args.rewards[1]
 
 
         # Get termination condition
-        done = self.steps == self.max_steps - 1
+        done = self.steps == self.args.max_steps - 1
 
 
         # Update state
@@ -100,16 +95,16 @@ class RiverSwimEnv(Env):
         for s in range(n_s):
             for a in range(n_a):
                 if s == bottom:
-                    swim_probs = self.swim_probs["bottom"]
+                    swim_probs = self.args.swim_probs["bottom"]
                 elif s == top:
-                    swim_probs = self.swim_probs["top"]
+                    swim_probs = self.args.swim_probs["top"]
                 else:
-                    swim_probs = self.swim_probs["middle"]
+                    swim_probs = self.args.swim_probs["middle"]
 
                 if a == 0:
                     p[s, a, max(s - 1, bottom)] = 1
                     if s == bottom:
-                        r[s, a, s] = self.rewards[0]
+                        r[s, a, s] = self.args.rewards[0]
                 else:
                     p[s, a, s] = swim_probs[1]
                     if s != bottom:
@@ -118,6 +113,6 @@ class RiverSwimEnv(Env):
                         p[s, a, s + 1] = swim_probs[2]
                     
                     if s == top:
-                        r[s, a, s] = self.rewards[1]
+                        r[s, a, s] = self.args.rewards[1]
         
         return p, r
