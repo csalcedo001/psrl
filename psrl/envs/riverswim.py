@@ -62,11 +62,9 @@ class RiverSwimEnv(Env):
         else:
             swim_probs = self.swim_probs["middle"]
 
-        direction = 0
+        direction = -1
         if action == 1:
-            direction = np.random.choice(len(swim_probs), p=swim_probs)
-
-        direction = direction * 2 - 1
+            direction = np.random.choice(len(swim_probs), p=swim_probs) - 1
 
         next_pos = min(max(self.pos + direction, bottom), top)
 
