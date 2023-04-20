@@ -1,40 +1,9 @@
-import argparse
-from dotmap import DotMap
-
-from psrl.envs import RiverSwimEnv, RandomMDPEnv
-from psrl.agents import PSRLAgent, RandomAgent, OptimalAgent
+from psrl.agents import OptimalAgent
 from psrl.config import get_env_config, get_agent_config
 from psrl.utils import rollout, env_name_map, agent_name_map
 
+from arg_utils import get_parser, get_config
 
-
-def get_parser():
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--agent', type=str, default='random_agent', help='Agent to use')
-    parser.add_argument('--env', type=str, default='riverswim', help='Environment to use')
-    parser.add_argument('--episodes', type=int, default=100, help='Number of episodes to run')
-
-    return parser
-
-
-def get_config(args):
-    config = {}
-
-    if args.env not in env_name_map:
-        raise ValueError('Environment not supported')
-
-    if args.agent not in agent_name_map:
-        raise ValueError('Agent not supported')
-    
-    if args.episodes < 1:
-        raise ValueError('Number of episodes must be at least 1')
-
-    config['agent'] = args.agent
-    config['env'] = args.env
-    config['episodes'] = args.episodes
-
-    return DotMap(config)
 
 
 parser = get_parser()
@@ -45,7 +14,6 @@ config = get_config(args)
 env_class = env_name_map[args.env]
 env_config = get_env_config(args.env)
 env = env_class(env_config)
-
 
 agent_class = agent_name_map[args.agent]
 agent_config = get_agent_config(args.agent)
