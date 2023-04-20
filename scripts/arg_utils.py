@@ -10,7 +10,7 @@ def get_parser():
 
     parser.add_argument('--agent', type=str, default='random_agent', help='Agent to use')
     parser.add_argument('--env', type=str, default='riverswim', help='Environment to use')
-    parser.add_argument('--episodes', type=int, default=100, help='Number of episodes to run')
+    parser.add_argument('--max_steps', type=int, default=10000, help='Number of episodes to run')
 
     return parser
 
@@ -24,12 +24,12 @@ def get_config(args):
     if args.agent not in agent_name_map:
         raise ValueError('Agent not supported')
     
-    if args.episodes < 1:
-        raise ValueError('Number of episodes must be at least 1')
+    if args.max_steps < 1:
+        raise ValueError('Max number of steps must be at least 1')
 
     config['env'] = args.env
     config['agent'] = args.agent
-    config['episodes'] = args.episodes
+    config['max_steps'] = args.max_steps
 
     config['env_config'] = get_env_config(args.env)
     config['agent_config'] = get_agent_config(args.agent)
