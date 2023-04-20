@@ -1,10 +1,11 @@
-import gym
 from gym import spaces
 import numpy as np
 
-class RandomMDPEnv(gym.Env):
+from psrl.envs import Env
+
+class RandomMDPEnv(Env):
     def __init__(self, n_states, n_actions, max_steps=10000):
-        super().__init__()
+        Env.__init__(self)
 
         self.action_space = spaces.Discrete(n_actions)
         self.observation_space = spaces.Discrete(n_states)
