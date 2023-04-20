@@ -1,3 +1,12 @@
+from .envs import (
+    RiverSwimEnv,
+    RandomMDPEnv,
+    GridworldEnv,
+    TwoRoomGridworldEnv,
+    FourRoomGridworldEnv,
+)
+
+
 def rollout(env, agent, episodes):
     trajectories = []
     for episode in range(episodes):
@@ -18,3 +27,13 @@ def rollout(env, agent, episodes):
         trajectories.append(trajectory)
     
     return trajectories
+
+
+
+env_name_map = {
+    'gridworld': GridworldEnv,
+    'tworoom': TwoRoomGridworldEnv,
+    'fourroom': FourRoomGridworldEnv,
+    'riverswim': RiverSwimEnv,
+    'randommdp': RandomMDPEnv,
+}

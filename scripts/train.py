@@ -2,13 +2,15 @@ import argparse
 
 from psrl.envs import RiverSwimEnv, RandomMDPEnv
 from psrl.agents import PSRLAgent, RandomAgent, OptimalAgent
-from psrl.utils import rollout
+from psrl.config import get_env_config, get_agent_config
+from psrl.utils import rollout, env_name_map
+
 
 
 # Define argument parser
 parser = argparse.ArgumentParser()
 parser.add_argument('--agent', type=str, default='random', help='Agent to use')
-parser.add_argument('--env', type=str, default='river_swim', help='Environment to use')
+parser.add_argument('--env', type=str, default='riverswim', help='Environment to use')
 parser.add_argument('--episodes', type=int, default=100, help='Number of episodes to run')
 
 
@@ -17,16 +19,15 @@ args = parser.parse_args()
 
 # Validate arguments
 # TODO: provide env arguments via env_config
-if args.env == 'random':
-    env = RandomMDPEnv(
-        n_states=10,
-        n_actions=5,
-        max_steps=100,
-    )
-elif args.env == 'river_swim':
-    env = RiverSwimEnv()
-else:
+
+if args.env not in env_name_map:
     raise ValueError('Environment not supported')
+
+env_class = env_name_map[args.env]
+env_config = get_env_config(args.env)
+print(env_config)
+env = env_class(env_config)
+
 
 # TODO: provide agent arguments via agent_config
 if args.agent == 'random':
