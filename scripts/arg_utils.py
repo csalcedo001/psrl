@@ -1,6 +1,7 @@
-
 import argparse
 from dotmap import DotMap
+
+from psrl.config import get_env_config, get_agent_config
 from psrl.utils import env_name_map, agent_name_map
 
 
@@ -26,8 +27,11 @@ def get_config(args):
     if args.episodes < 1:
         raise ValueError('Number of episodes must be at least 1')
 
-    config['agent'] = args.agent
     config['env'] = args.env
+    config['agent'] = args.agent
     config['episodes'] = args.episodes
+
+    config['env_config'] = get_env_config(args.env)
+    config['agent_config'] = get_agent_config(args.agent)
 
     return DotMap(config)
