@@ -68,6 +68,4 @@ for t in range(len(agent_trajectories)):
 
     wandb.log({'regret': regret})
 
-regrets = np.array(regrets)
-
 print("REGRET:", regrets[-1])
