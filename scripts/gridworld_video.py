@@ -11,6 +11,24 @@ from arg_utils import get_parser, get_config
 
 
 
+
+def choose_color(symbol):
+    if symbol == ' ':
+        color = 'w'
+    elif symbol == '#':
+        color = 'k'
+    elif symbol == 'S':
+        color = 'b'
+    elif symbol == 'T':
+        color = 'g'
+    elif symbol == '.':
+        color = '#7f7f7f'
+    else:
+        color = None
+    
+    return color
+
+
 parser = get_parser()
 args = parser.parse_args()
 config = get_config(args)
@@ -40,40 +58,48 @@ states += [trajectory[-1][3]]
 root = os.path.dirname(__file__)
 os.makedirs(f'{root}/frames', exist_ok=True)
 
+
+
+fig, ax = plt.subplots()
+
+plt.xlim(0, env.cols)
+plt.ylim(0, env.rows)
+
+ax.set_aspect('equal')
+ax.set_xticks([])
+ax.set_yticks([])
+
+state_to_pos = {}
+
+for i in range(env.rows):
+    for j in range(env.cols):
+        color = choose_color(env.grid[i][j])
+        
+        x = j
+        y = env.rows - i - 1
+
+        ax.add_patch(plt.Rectangle((x, y), 1, 1, color=color))
+
+        state_to_pos[env.state_id[i, j]] = [i, j]
+
+
 for t, state in enumerate(states):
     print(f"Processing frame {t}")
 
-    fig, ax = plt.subplots()
+    i, j = state_to_pos[state]
+        
+    x = j
+    y = env.rows - i - 1
 
-    plt.xlim(0, env.cols)
-    plt.ylim(0, env.rows)
+    # Add point on position
+    plt.plot(x + 0.5, y + 0.5, 'ro')
 
-    ax.set_aspect('equal')
-    ax.set_xticks([])
-    ax.set_yticks([])
-
-    for i in range(env.rows):
-        for j in range(env.cols):
-            if env.grid[i][j] == ' ':
-                color = 'w'
-            elif env.grid[i][j] == '#':
-                color = 'k'
-            elif env.grid[i][j] == 'S':
-                color = 'b'
-            elif env.grid[i][j] == 'T':
-                color = 'g'
-            elif env.grid[i][j] == '.':
-                color = '#7f7f7f'
-            
-            x = j
-            y = env.rows - i - 1
-            ax.add_patch(plt.Rectangle((x, y), 1, 1, color=color))
-            
-            if env.state_id[i, j] == state:
-                plt.plot(x + 0.5, y + 0.5, 'ro')
-    
     plt.savefig(f'{root}/frames/img_{t}.png')
-    plt.close(fig)
+
+    # Cover it back with 
+    ax.add_patch(plt.Rectangle((x, y), 1, 1, color=color))
+        
+
 
 frames = []
 for t in range(len(states)):
