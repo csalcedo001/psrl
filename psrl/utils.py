@@ -13,8 +13,10 @@ from .agents import (
 )
 
 
-def rollout_episode(env, agent):
+def rollout_episode(env, agent, render=False):
     state = env.reset()
+    if render:
+        env.render()
 
     trajectory = []
     while True:
@@ -24,6 +26,10 @@ def rollout_episode(env, agent):
 
         transition = (state, action, reward, next_state)
         trajectory.append(transition)
+
+
+        if render:
+            env.render()
 
         if done:
             break

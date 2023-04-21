@@ -39,18 +39,4 @@ print("Action space:", env.action_space)
 state = env.reset()
 env.render()
 
-trajectory = []
-while True:
-    action = agent.act(state)
-
-    next_state, reward, done, _ = env.step(action)
-
-    transition = (state, action, reward, next_state)
-    trajectory.append(transition)
-
-    env.render()
-
-    if done:
-        break
-
-    state = next_state
+rollout_episode(env, agent, render=True)
