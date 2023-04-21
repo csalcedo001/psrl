@@ -5,7 +5,7 @@ import imageio
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from psrl.utils import rollout_episode, env_name_map, agent_name_map
+from psrl.utils import train_episode, rollout_episode, env_name_map, agent_name_map
 
 from arg_utils import get_parser, get_config
 
@@ -49,6 +49,9 @@ env = env_class(config.env_config)
 agent_class = agent_name_map[args.agent]
 agent = agent_class(env, config.agent_config)
 
+episodes = 100000
+for episode in tqdm(range(episodes)):
+    train_episode(env, agent)
 
 trajectory = rollout_episode(env, agent, render=config.render, verbose=True)
 
@@ -108,5 +111,5 @@ for t in range(len(states)):
     image = imageio.v2.imread(f'{root}/frames/img_{t}.png')
     frames.append(image)
 
-print("Saving gif...")
-imageio.mimsave(f'{root}/trajectory.gif', frames, fps = 2)
+print("Saving video...")
+imageio.mimsave(f'{root}/trajectory.mp4', frames, fps = 2)
