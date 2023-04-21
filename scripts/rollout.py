@@ -1,75 +1,56 @@
-import argparse
+import copy
+import wandb
 from tqdm import tqdm
 
-from psrl.envs import RiverSwimEnv, RandomMDPEnv
-from psrl.agents import PSRLAgent, RandomAgent, OptimalAgent
+from psrl.agents import OptimalAgent
+from psrl.config import get_agent_config
+from psrl.utils import train_episode, rollout_episode, env_name_map, agent_name_map
 
-
-# Define argument parser
-parser = argparse.ArgumentParser()
-parser.add_argument('--agent', type=str, default='random', help='Agent to use')
-parser.add_argument('--env', type=str, default='river_swim', help='Environment to use')
-parser.add_argument('--episodes', type=int, default=10, help='Number of episodes to run')
+from arg_utils import get_parser, get_config
 
 
 
+parser = get_parser()
 args = parser.parse_args()
+config = get_config(args)
 
-# Validate arguments
-# TODO: provide env arguments via env_config
-if args.env == 'random':
-    env = RandomMDPEnv(
-        n_states=10,
-        n_actions=5,
-        max_steps=100,
-    )
-elif args.env == 'river_swim':
-    env = RiverSwimEnv()
-else:
-    raise ValueError('Environment not supported')
+# Initialize wandb
+wandb.init(
+    entity='cesar-salcedo',
+    project='psrl',
+    config=config.toDict()
+)
 
-# TODO: provide agent arguments via agent_config
-if args.agent == 'random':
-    agent = RandomAgent(env)
-elif args.agent == 'psrl':
-    agent = PSRLAgent(
-        env,
-        gamma=0.9,
-        kappa=1,
-        mu=0,
-        lambd=1,
-        alpha=1,
-        beta=1,
-        max_iter=1000,
-    )
-elif args.agent == 'optimal':
-    agent = OptimalAgent(env, gamma=0.9, max_iter=10000)
-else:
-    raise ValueError('Agent not supported')
+
+# Get environment
+env_class = env_name_map[args.env]
+env = env_class(config.env_config)
+
+# Get agent
+agent_class = agent_name_map[args.agent]
+agent = agent_class(env, config.agent_config)
 
 
 
-iteration = 0
+print("Observation_space:", env.observation_space)
+print("Action space:", env.action_space)
 
-trajectories = []
-for episode in tqdm(range(args.episodes)):
-    state = env.reset()
 
-    trajectory = []
-    while True:
-        action = agent.act(state)
+state = env.reset()
+env.render()
 
-        next_state, reward, done, _ = env.step(action)
+trajectory = []
+while True:
+    action = agent.act(state)
 
-        transition = (state, action, reward, next_state)
-        trajectory.append(transition)
+    next_state, reward, done, _ = env.step(action)
 
-        print('[{}/{}] Iteration: {}, State: {}, Action: {}, Next State: {}, Reward: {}, Done: {}'.format(episode, args.episodes, iteration, state, action, next_state, reward, done))
+    transition = (state, action, reward, next_state)
+    trajectory.append(transition)
 
-        if done:
-            break
-            
-        iteration += 1
-        state = next_state
-    
-    trajectories.append(trajectory)
+    env.render()
+
+    if done:
+        break
+
+    state = next_state

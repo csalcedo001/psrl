@@ -1,14 +1,17 @@
 import os
-import gym
 from gym import spaces
 import numpy as np
+from dotmap import DotMap
 
+from .env import Env
 from .utils import get_grid_from_file
 
 
-class GridworldEnv(gym.Env):
-    def __init__(self, grid):
-        self._setup_from_grid(grid)
+class GridworldEnv(Env):
+    def __init__(self, config):
+        Env.__init__(self)
+
+        self._setup_from_grid(config.grid)
 
         self.reset()
     
@@ -23,7 +26,7 @@ class GridworldEnv(gym.Env):
 
         next_state = self._get_state_from_pos(next_pos)
         reward = self.reward_grid[next_pos[0], next_pos[1]]
-        reward = 6 - np.linalg.norm(self.goal_states[0] - self.pos)
+        # reward = 6 - np.linalg.norm(self.goal_states[0] - self.pos)
         done = self.state_id[next_pos[0], next_pos[1]] == 0
 
         return next_state, reward, done, {}
@@ -41,6 +44,30 @@ class GridworldEnv(gym.Env):
                     print('X', end='')
             print(u'\u2502')
         print(u'\u2514' + u'\u2500' * self.cols + u'\u2518')
+
+    def get_p_and_r(self):
+        n_s = self.observation_space.n
+        n_a = self.action_space.n
+
+        p = np.zeros((n_s, n_a, n_s))
+        r = np.zeros((n_s, n_a, n_s))
+
+        for i in range(self.rows):
+            for j in range(self.cols):
+                pos = np.array([i, j])
+                state = self._get_state_from_pos(pos)
+
+                if state <= 0:
+                    continue
+
+                for action in range(self.action_space.n):
+                    next_pos = self._get_next_pos(action, pos)
+                    next_state = self._get_state_from_pos(next_pos)
+
+                    p[state, action, next_state] = 1
+                    r[state, action, next_state] = self.reward_grid[next_pos[0], next_pos[1]]
+
+        return p, r
 
     def _setup_from_grid(self, grid):
         self.grid = grid
@@ -102,7 +129,7 @@ class GridworldEnv(gym.Env):
         self.observation_space = spaces.Discrete(num_states)
     
     def _get_state_from_pos(self, pos):
-        state_id = self.state_id[pos[0], pos[1]]
+        state_id = int(self.state_id[pos[0], pos[1]])
 
         return state_id
 
@@ -114,7 +141,7 @@ class GridworldEnv(gym.Env):
         vec[state] = 1
         return vec
     
-    def _get_next_pos(self, action):
+    def _get_next_pos(self, action, pos=None):
         # up: 0, right: 1, down: 2, left: 3
         axis = action % 2
         direction = action // 2
@@ -123,7 +150,7 @@ class GridworldEnv(gym.Env):
         if axis == 0:
             direction = 1 - direction
 
-        next_pos = self.pos.copy()
+        next_pos = self.pos.copy() if pos is None else pos.copy()
         next_pos[axis] += 1 if direction == 0 else -1
 
         is_outside_grid = np.any(np.minimum(np.maximum(next_pos, 0), np.array([self.rows, self.cols]) - 1) != next_pos)
@@ -132,22 +159,26 @@ class GridworldEnv(gym.Env):
             next_pos = self.pos.copy()
 
         return next_pos
-        
-    
+
+
 
 class TwoRoomGridworldEnv(GridworldEnv):
-    def __init__(self):
+    def __init__(self, config):
         gridworld_path = os.path.join(os.path.dirname(__file__), 'maps', 'two_room.txt')
 
         grid = get_grid_from_file(gridworld_path)
 
-        super().__init__(grid)
-    
+        config = DotMap({'grid': grid})
+
+        GridworldEnv.__init__(self, config)
+
 
 class FourRoomGridworldEnv(GridworldEnv):
-    def __init__(self):
+    def __init__(self, config):
         gridworld_path = os.path.join(os.path.dirname(__file__), 'maps', 'four_room.txt')
 
         grid = get_grid_from_file(gridworld_path)
 
-        super().__init__(grid)
+        config = DotMap({'grid': grid})
+
+        GridworldEnv.__init__(self, config)
