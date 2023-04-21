@@ -1,10 +1,6 @@
-import copy
 import wandb
-from tqdm import tqdm
 
-from psrl.agents import OptimalAgent
-from psrl.config import get_agent_config
-from psrl.utils import train_episode, rollout_episode, env_name_map, agent_name_map
+from psrl.utils import rollout_episode, env_name_map, agent_name_map
 
 from arg_utils import get_parser, get_config
 
@@ -31,12 +27,4 @@ agent_class = agent_name_map[args.agent]
 agent = agent_class(env, config.agent_config)
 
 
-
-print("Observation_space:", env.observation_space)
-print("Action space:", env.action_space)
-
-
-state = env.reset()
-env.render()
-
-rollout_episode(env, agent, render=True)
+rollout_episode(env, agent, render=config.render, verbose=True)

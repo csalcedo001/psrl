@@ -1,6 +1,5 @@
 import copy
 import wandb
-import numpy as np
 from tqdm import tqdm
 
 from psrl.agents import OptimalAgent
@@ -41,31 +40,50 @@ print("Observation_space:", env.observation_space)
 print("Action space:", env.action_space)
 
 
-episodes = args.max_steps // env.max_steps
+if config.env_config.max_steps:
+    episodes = config.max_steps // env.max_steps
+else:
+    episodes = config.max_steps // 10
 
 
-oracle_trajectories = []
+oracle_env = copy.deepcopy(env)
+
 agent_trajectories = []
-for _ in tqdm(range(episodes)):
-    oracle_env = copy.deepcopy(env)
-
+for episode in tqdm(range(episodes)):
     agent_trajectory = train_episode(env, agent)
     agent_trajectories += agent_trajectory
 
+    # if episode % 100 == 0:
+    #     rollout_episode(env, agent, render=config.render, verbose=config.verbose)
+
+oracle_trajectories = []
+for _ in tqdm(range(episodes)):
     oracle_trajectory = rollout_episode(oracle_env, oracle)
     oracle_trajectories += oracle_trajectory
 
 
 # Compute regret
+# agent_total_rewards = []
+# for t in agent_trajectories:
+#     agent_total_rewards += t[2]
+
+# oracle_total_rewards = []
+# for t in oracle_trajectories:
+#     oracle_total_rewards += t[2]
+
 regrets = []
 regret = 0
 for t in range(len(agent_trajectories)):
-    agent_reward = agent_trajectories[t][2]
-    oracle_reward = oracle_trajectories[t][2]
+    agent_reward = agent_trajectories[min(t, len(agent_trajectories) - 1)][2]
+    oracle_reward = oracle_trajectories[min(t, len(oracle_trajectories) - 1)][2]
 
     regret += oracle_reward - agent_reward
     regrets.append(regret)
 
     wandb.log({'regret': regret})
 
-print("REGRET:", regrets[-1])
+
+if config.render or config.verbose:
+    rollout_episode(env, agent, render=config.render, verbose=config.verbose)
+
+print("Regret:", regrets[-1])
