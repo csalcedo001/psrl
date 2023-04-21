@@ -1,4 +1,5 @@
 import os
+import copy
 from gym import spaces
 import numpy as np
 from dotmap import DotMap
@@ -68,6 +69,10 @@ class GridworldEnv(Env):
                     r[state, action, next_state] = self.reward_grid[next_pos[0], next_pos[1]]
 
         return p, r
+    
+    def get_grid(self):
+        return copy.deepcopy(self.grid)
+    
 
     def _setup_from_grid(self, grid):
         self.grid = grid
@@ -135,11 +140,6 @@ class GridworldEnv(Env):
 
     def _get_pos_id(self, pos):
         return pos[0] * self.rows + pos[1]
-    
-    def _state_to_vec(self, state):
-        vec = np.zeros(self.rows * self.cols)
-        vec[state] = 1
-        return vec
     
     def _get_next_pos(self, action, pos=None):
         # up: 0, right: 1, down: 2, left: 3
