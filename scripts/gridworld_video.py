@@ -91,12 +91,14 @@ for t, state in enumerate(states):
     x = j
     y = env.rows - i - 1
 
-    # Add point on position
-    plt.plot(x + 0.5, y + 0.5, 'ro')
+    # Draw agent and save figure
+    color = choose_color(env.grid[i][j])
+    ax.add_patch(plt.Circle((x + 0.5, y + 0.5), 0.25, color='r'))
 
     plt.savefig(f'{root}/frames/img_{t}.png')
 
-    # Cover it back with 
+    # Return to previous state by covering it back
+    color = choose_color(env.grid[i][j])
     ax.add_patch(plt.Rectangle((x, y), 1, 1, color=color))
         
 
