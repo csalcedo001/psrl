@@ -8,13 +8,13 @@ class PSRLAgent(Agent):
     def __init__(self, env, config):
         Agent.__init__(self, env, config)
 
+        self.env = env
+        self.config = config
+
         mu = config.mu
         lambd = config.lambd
         alpha = config.alpha
         beta = config.beta
-
-        self.env = env
-        self.config = config
 
         n_s = env.observation_space.n
         n_a = env.action_space.n
@@ -25,10 +25,16 @@ class PSRLAgent(Agent):
 
         self.pi = None
         self.buffer = []
+        self.steps = 0
 
         self.update_policy()
     
     def act(self, state):
+        self.steps += 1
+
+        if self.steps % self.config.tau == 0:
+            self.update_policy()
+        
         return self.pi[state]
 
     def observe(self, transition):

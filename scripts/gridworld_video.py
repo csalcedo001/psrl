@@ -49,11 +49,11 @@ env = env_class(config.env_config)
 agent_class = agent_name_map[args.agent]
 agent = agent_class(env, config.agent_config)
 
-episodes = 100000
+episodes = 500
 for episode in tqdm(range(episodes)):
     train_episode(env, agent)
 
-trajectory = rollout_episode(env, agent, render=config.render, verbose=True)
+trajectory = rollout_episode(env, agent, max_steps=1000, render=config.render, verbose=True)
 
 states = [t[0] for t in trajectory]
 states += [trajectory[-1][3]]
