@@ -1,5 +1,6 @@
 import os
 import copy
+import time
 import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -13,19 +14,28 @@ from arg_utils import get_parser, get_config
 
 
 class RegretBenchmarkExperiment:
-    def __init__(self, run_config, num_runs=1):
+    def __init__(self, run_config, num_runs=1, max_parallel_runs=1, retry_freq=10):
         self.run_config = run_config
         self.num_runs = num_runs
         self.results = [None] * num_runs
+        self.retry_freq = retry_freq
 
-        self.manager = ParallelRunManager(num_runs)
+        self.manager = ParallelRunManager(max_parallel_runs)
 
     def run(self):
-        for i in range(self.num_runs):
+        i = 0
+        while True:
+            if i >= self.num_runs:
+                break
+
             func_args = {
-                'instance_id': i
+                'run_id': i
             }
-            self.manager.queue(self.run_instance, func_args)
+
+            if not self.manager.queue(self.run_instance, func_args):
+                time.sleep(self.retry_freq)
+            else:
+                i += 1
         
         self.manager.finish()
 
@@ -75,7 +85,7 @@ class RegretBenchmarkExperiment:
             regrets.append(regret)
 
         
-        self.results[func_args['instance_id']] = regrets
+        self.results[func_args['run_id']] = regrets
 
 
 
@@ -89,8 +99,9 @@ save_config(config.toDict(), config.experiment_dir)
 
 
 # Run experiment and get results
-num_runs = 2
-experiment = RegretBenchmarkExperiment(config, num_runs)
+num_runs = 5
+max_parallel_runs = 3
+experiment = RegretBenchmarkExperiment(config, num_runs, max_parallel_runs)
 
 results = experiment.run()
 
@@ -107,5 +118,6 @@ x_index = np.arange(len(mean_regret))
 figure = plt.figure()
 plt.fill_between(x_index, min_regret, max_regret, alpha=0.5, label='min/max regret')
 plt.plot(x_index, mean_regret, label='mean regret')
+plt.legend()
 plt.savefig(filename)
 plt.close()

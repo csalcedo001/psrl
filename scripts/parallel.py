@@ -98,8 +98,8 @@ class ResourceAllocator():
 
 
 class ParallelRunManager():
-    def __init__(self, allocator_config):
-        self.allocator = ResourceAllocator(allocator_config)
+    def __init__(self, max_parallel_runs):
+        self.allocator = ResourceAllocator(max_parallel_runs)
         self.id_to_thread = {}
     
     def queue(self, command_or_function, args):
