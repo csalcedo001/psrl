@@ -41,9 +41,6 @@ states += [trajectory[-1][3]]
 
 
 root = config.experiment_dir
-os.makedirs(f'{root}/frames', exist_ok=True)
-
-
 
 fig, ax = plt.subplots()
 
@@ -68,6 +65,9 @@ for i in range(env.rows):
         state_to_pos[env.state_id[i, j]] = [i, j]
 
 
+frame_filename = f'{root}/frame.png'
+
+frames = []
 for t, state in enumerate(states):
     print(f"Processing frame {t}")
 
@@ -80,18 +80,18 @@ for t, state in enumerate(states):
     color = choose_gridworld_color(env.grid[i][j])
     ax.add_patch(plt.Circle((x + 0.5, y + 0.5), 0.25, color='r'))
 
-    plt.savefig(f'{root}/frames/img_{t}.png')
+    plt.savefig(frame_filename)
 
     # Return to previous state by covering it back
     color = choose_gridworld_color(env.grid[i][j])
     ax.add_patch(plt.Rectangle((x, y), 1, 1, color=color))
-        
 
-
-frames = []
-for t in range(len(states)):
-    image = imageio.v2.imread(f'{root}/frames/img_{t}.png')
+    # Load plot as image
+    image = imageio.v2.imread(frame_filename)
     frames.append(image)
 
+os.remove(frame_filename)
+    
+
 print("Saving video...")
-imageio.mimsave(f'{root}/trajectory.mp4', frames, fps = 2)
+imageio.mimsave(f'{root}/trajectory.mp4', frames, fps=2)
