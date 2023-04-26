@@ -49,7 +49,7 @@ env = env_class(config.env_config)
 agent_class = agent_name_map[args.agent]
 agent = agent_class(env, config.agent_config)
 
-episodes = 500
+episodes = 100
 for episode in tqdm(range(episodes)):
     train_episode(env, agent)
 

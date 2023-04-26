@@ -32,8 +32,8 @@ class PSRLAgent(Agent):
     def act(self, state):
         self.steps += 1
 
-        if self.steps % self.config.tau == 0:
-            self.update_policy()
+        # if self.steps % self.config.tau == 0:
+        self.update_policy()
         
         return self.pi[state]
 
@@ -71,7 +71,9 @@ class PSRLAgent(Agent):
 
                     self.r_dist[s, a, s_] = [mu, lambd, alpha, beta]
         
-        self.buffer = []
+        
+        if self.steps % self.config.tau == 0:
+             self.buffer = []
 
     def update_policy(self):
         # Sample from posterior
