@@ -80,15 +80,15 @@ def train_episode(env, agent, render=False, verbose=False, max_steps=100):
 
 
 env_name_map = {
-    'gridworld': GridworldEnv,
-    'tworoom': TwoRoomGridworldEnv,
-    'fourroom': FourRoomGridworldEnv,
     'riverswim': RiverSwimEnv,
     'randommdp': RandomMDPEnv,
+    'tworoom': TwoRoomGridworldEnv,
+    'fourroom': FourRoomGridworldEnv,
+    'gridworld': GridworldEnv,
 }
 
 agent_name_map = {
-    'random_agent': RandomAgent,
     'psrl': PSRLAgent,
+    'random_agent': RandomAgent,
     'optimal': OptimalAgent,
 }
