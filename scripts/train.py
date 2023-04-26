@@ -40,36 +40,32 @@ print("Observation_space:", env.observation_space)
 print("Action space:", env.action_space)
 
 
-if config.env_config.max_steps:
-    episodes = config.max_steps // env.max_steps
-else:
-    episodes = config.max_steps // 10
+
+
+agent_trajectories = []
+remaining_steps = config.max_steps
+pbar = tqdm(total=config.max_steps)
+while remaining_steps > 0:
+    agent_trajectory = train_episode(env, agent)
+    agent_trajectories += agent_trajectory
+    elapsed_steps = len(agent_trajectory)
+    remaining_steps -= elapsed_steps
+    pbar.update(elapsed_steps)
+
 
 
 oracle_env = copy.deepcopy(env)
 
-agent_trajectories = []
-for episode in tqdm(range(episodes)):
-    agent_trajectory = train_episode(env, agent)
-    agent_trajectories += agent_trajectory
-
-    # if episode % 100 == 0:
-    #     rollout_episode(env, agent, render=config.render, verbose=config.verbose)
-
 oracle_trajectories = []
-for _ in tqdm(range(episodes)):
+remaining_steps = config.max_steps
+pbar = tqdm(total=config.max_steps)
+while remaining_steps > 0:
     oracle_trajectory = rollout_episode(oracle_env, oracle)
     oracle_trajectories += oracle_trajectory
+    elapsed_steps = len(oracle_trajectory)
+    remaining_steps -= elapsed_steps
+    pbar.update(elapsed_steps)
 
-
-# Compute regret
-# agent_total_rewards = []
-# for t in agent_trajectories:
-#     agent_total_rewards += t[2]
-
-# oracle_total_rewards = []
-# for t in oracle_trajectories:
-#     oracle_total_rewards += t[2]
 
 regrets = []
 regret = 0

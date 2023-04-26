@@ -30,8 +30,13 @@ agent_class = agent_name_map[args.agent]
 agent = agent_class(env, config.agent_config)
 
 episodes = 100
-for episode in tqdm(range(episodes)):
-    train_episode(env, agent)
+remaining_steps = config.max_steps
+pbar = tqdm(total=config.max_steps)
+while remaining_steps > 0:
+    agent_trajectory = train_episode(env, agent)
+    elapsed_steps = len(agent_trajectory)
+    remaining_steps -= elapsed_steps
+    pbar.update(elapsed_steps)
 
 trajectory = rollout_episode(env, agent, max_steps=1000, render=config.render, verbose=True)
 

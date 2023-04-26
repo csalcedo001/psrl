@@ -76,17 +76,30 @@ class RegretBenchmarkExperiment:
             episodes = config.max_steps // 10
 
 
-        oracle_env = copy.deepcopy(env)
 
         agent_trajectories = []
-        for episode in tqdm(range(episodes)):
+        remaining_steps = config.max_steps
+        pbar = tqdm(total=config.max_steps)
+        while remaining_steps > 0:
             agent_trajectory = train_episode(env, agent)
             agent_trajectories += agent_trajectory
+            elapsed_steps = len(agent_trajectory)
+            remaining_steps -= elapsed_steps
+            pbar.update(elapsed_steps)
+
+
+        
+        oracle_env = copy.deepcopy(env)
 
         oracle_trajectories = []
-        for _ in tqdm(range(episodes)):
+        remaining_steps = config.max_steps
+        pbar = tqdm(total=config.max_steps)
+        while remaining_steps > 0:
             oracle_trajectory = rollout_episode(oracle_env, oracle)
             oracle_trajectories += oracle_trajectory
+            elapsed_steps = len(oracle_trajectory)
+            remaining_steps -= elapsed_steps
+            pbar.update(elapsed_steps)
 
         regrets = []
         regret = 0
