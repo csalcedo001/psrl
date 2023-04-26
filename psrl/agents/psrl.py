@@ -4,7 +4,6 @@ from .agent import Agent
 from .utils import solve_tabular_mdp
 
 class PSRLAgent(Agent):
-    # def __init__(self, env, gamma, kappa, mu, lambd, alpha, beta, max_iter):
     def __init__(self, env, config):
         Agent.__init__(self, env, config)
 

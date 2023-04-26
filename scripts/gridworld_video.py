@@ -8,30 +8,15 @@ from tqdm import tqdm
 from psrl.utils import train_episode, rollout_episode, env_name_map, agent_name_map
 
 from arg_utils import get_parser, get_config
+from utils import choose_gridworld_color
 
 
 
+envs = ['tworoom', 'fourroom']
 
-def choose_color(symbol):
-    if symbol == ' ':
-        color = 'w'
-    elif symbol == '#':
-        color = 'k'
-    elif symbol == 'S':
-        color = 'b'
-    elif symbol == 'T':
-        color = 'g'
-    elif symbol == '.':
-        color = '#7f7f7f'
-    else:
-        color = None
-    
-    return color
-
-
-parser = get_parser()
+parser = get_parser(envs=envs)
 args = parser.parse_args()
-config = get_config(args)
+config = get_config(args, envs=envs)
 
 # Initialize wandb
 # wandb.init(
