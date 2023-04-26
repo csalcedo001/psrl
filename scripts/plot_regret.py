@@ -11,31 +11,43 @@ from psrl.utils import train_episode, rollout_episode, env_name_map, agent_name_
 
 from parallel import ParallelRunManager
 from arg_utils import get_parser, get_config
+from plot_utils import env_plot_name_map, agent_plot_name_map
 
 
 class RegretBenchmarkExperiment:
-    def __init__(self, run_config, num_runs=1, max_parallel_runs=1, retry_freq=10):
+    def __init__(
+            self,
+            run_config,
+            agents,
+            runs_per_agent=1,
+            max_parallel_runs=1,
+            retry_freq=5
+        ):
+
         self.run_config = run_config
-        self.num_runs = num_runs
-        self.results = [None] * num_runs
+        self.agents = agents
+        self.num_runs = runs_per_agent
+        self.results = {agent: [None] * runs_per_agent for agent in agents}
         self.retry_freq = retry_freq
 
         self.manager = ParallelRunManager(max_parallel_runs)
 
     def run(self):
-        i = 0
-        while True:
-            if i >= self.num_runs:
-                break
+        for agent in agents:
+            i = 0
+            while True:
+                if i >= self.num_runs:
+                    break
 
-            func_args = {
-                'run_id': i
-            }
+                func_args = {
+                    'agent': agent,
+                    'run_id': i,
+                }
 
-            if not self.manager.queue(self.run_instance, func_args):
-                time.sleep(self.retry_freq)
-            else:
-                i += 1
+                if not self.manager.queue(self.run_instance, func_args):
+                    time.sleep(self.retry_freq)
+                else:
+                    i += 1
         
         self.manager.finish()
 
@@ -43,6 +55,7 @@ class RegretBenchmarkExperiment:
 
     def run_instance(self, func_args):
         config = self.run_config
+        config['agent'] = func_args['agent']
 
         # Get environment
         env_class = env_name_map[config.env]
@@ -85,7 +98,7 @@ class RegretBenchmarkExperiment:
             regrets.append(regret)
 
         
-        self.results[func_args['run_id']] = regrets
+        self.results[func_args['agent']][func_args['run_id']] = regrets
 
 
 
@@ -99,25 +112,35 @@ save_config(config.toDict(), config.experiment_dir)
 
 
 # Run experiment and get results
-num_runs = 5
-max_parallel_runs = 3
-experiment = RegretBenchmarkExperiment(config, num_runs, max_parallel_runs)
+agents = ['psrl', 'random_agent']
+runs_per_agent = 2
+max_parallel_runs = 1
+
+# TODO: fix parallelization, it's slower than serial execution...
+# do so by using multiprocessing instead of multithreading
+experiment = RegretBenchmarkExperiment(config, agents, runs_per_agent, max_parallel_runs)
 
 results = experiment.run()
+
 
 
 # Make plots from results
 filename = os.path.join(config.experiment_dir, 'regret.png')
 
-mean_regret = np.mean(results, axis=0)
-min_regret = np.min(results, axis=0)
-max_regret = np.max(results, axis=0)
-
-x_index = np.arange(len(mean_regret))
-
 figure = plt.figure()
-plt.fill_between(x_index, min_regret, max_regret, alpha=0.5, label='min/max regret')
-plt.plot(x_index, mean_regret, label='mean regret')
+
+plt.title(f'Regret for {env_plot_name_map[config.env]} environment')
+
+for agent in agents:
+    mean_regret = np.mean(results[agent], axis=0)
+    min_regret = np.min(results[agent], axis=0)
+    max_regret = np.max(results[agent], axis=0)
+
+    x_index = np.arange(len(mean_regret))
+
+    plt.fill_between(x_index, min_regret, max_regret, alpha=0.5)
+    plt.plot(x_index, mean_regret, label=agent_plot_name_map[agent])
+
 plt.legend()
 plt.savefig(filename)
 plt.close()
