@@ -13,7 +13,7 @@ def get_runs_dir(setup=False):
     
     return os.path.realpath(runs_dir)
 
-def get_experiment_conf(config, warn=True):
+def get_experiment_config(config, warn=True):
     runs_dir = get_runs_dir(setup=True)
 
     experiment_name = config.get("experiment_name", None)
@@ -41,5 +41,5 @@ def get_experiment_dir(config):
     if 'experiment_dir' in config:
         return config['experiment_dir']
     
-    experiment_conf = get_experiment_conf(config, warn=False)
+    experiment_conf = get_experiment_config(config, warn=False)
     return experiment_conf['experiment_dir']

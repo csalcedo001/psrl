@@ -1,9 +1,11 @@
+import os
 import copy
 import numpy as np
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 from psrl.agents import OptimalAgent
-from psrl.config import get_agent_config
+from psrl.config import get_agent_config, save_config
 from psrl.utils import train_episode, rollout_episode, env_name_map, agent_name_map
 
 from parallel import ParallelRunManager
@@ -79,13 +81,31 @@ class RegretBenchmarkExperiment:
 
 
 
+# Get experiment config
 parser = get_parser()
 args = parser.parse_args()
 config = get_config(args)
+save_config(config.toDict(), config.experiment_dir)
 
+
+# Run experiment and get results
 num_runs = 2
 experiment = RegretBenchmarkExperiment(config, num_runs)
 
 results = experiment.run()
 
-print(np.array(results).shape)
+
+# Make plots from results
+filename = os.path.join(config.experiment_dir, 'regret.png')
+
+mean_regret = np.mean(results, axis=0)
+min_regret = np.min(results, axis=0)
+max_regret = np.max(results, axis=0)
+
+x_index = np.arange(len(mean_regret))
+
+figure = plt.figure()
+plt.fill_between(x_index, min_regret, max_regret, alpha=0.5, label='min/max regret')
+plt.plot(x_index, mean_regret, label='mean regret')
+plt.savefig(filename)
+plt.close()
