@@ -36,7 +36,9 @@ trajectory = rollout_episode(env, agent, max_steps=1000, render=config.render, v
 states = [t[0] for t in trajectory]
 states += [trajectory[-1][3]]
 
-root = os.path.dirname(__file__)
+
+
+root = config.experiment_dir
 os.makedirs(f'{root}/frames', exist_ok=True)
 
 
