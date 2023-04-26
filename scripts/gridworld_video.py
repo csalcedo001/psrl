@@ -18,13 +18,6 @@ parser = get_parser(envs=envs)
 args = parser.parse_args()
 config = get_config(args, envs=envs)
 
-# Initialize wandb
-# wandb.init(
-#     entity='cesar-salcedo',
-#     project='psrl',
-#     config=config.toDict()
-# )
-
 
 # Get environment
 env_class = env_name_map[args.env]
@@ -61,7 +54,7 @@ state_to_pos = {}
 
 for i in range(env.rows):
     for j in range(env.cols):
-        color = choose_color(env.grid[i][j])
+        color = choose_gridworld_color(env.grid[i][j])
         
         x = j
         y = env.rows - i - 1
@@ -80,13 +73,13 @@ for t, state in enumerate(states):
     y = env.rows - i - 1
 
     # Draw agent and save figure
-    color = choose_color(env.grid[i][j])
+    color = choose_gridworld_color(env.grid[i][j])
     ax.add_patch(plt.Circle((x + 0.5, y + 0.5), 0.25, color='r'))
 
     plt.savefig(f'{root}/frames/img_{t}.png')
 
     # Return to previous state by covering it back
-    color = choose_color(env.grid[i][j])
+    color = choose_gridworld_color(env.grid[i][j])
     ax.add_patch(plt.Rectangle((x, y), 1, 1, color=color))
         
 
