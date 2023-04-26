@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 from psrl.utils import train_episode, rollout_episode, env_name_map, agent_name_map
+from psrl.config import save_config
 
 from arg_utils import get_parser, get_config
 from utils import choose_gridworld_color
@@ -17,6 +18,7 @@ envs = ['tworoom', 'fourroom']
 parser = get_parser(envs=envs)
 args = parser.parse_args()
 config = get_config(args, envs=envs)
+save_config(config.toDict(), config.experiment_dir)
 
 
 # Get environment

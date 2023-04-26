@@ -4,7 +4,7 @@ from dotmap import DotMap
 from psrl.config import get_env_config, get_agent_config
 from psrl.utils import env_name_map, agent_name_map
 
-from runs import get_experiment_dir
+from runs import get_experiment_conf
 
 
 def get_parser(envs=None, agents=None):
@@ -50,8 +50,11 @@ def get_config(args, envs=None, agents=None):
 
     config['env_config'] = get_env_config(args.env)
     config['agent_config'] = get_agent_config(args.agent)
+    config['agent_config'] = get_agent_config(args.agent)
 
-    experiment_dir = get_experiment_dir(config)
-    config['experiment_dir'] = experiment_dir
+    experiment_conf = get_experiment_conf(config)
+    config['experiment_dir'] = experiment_conf['experiment_dir']
+    config['experiment_dir'] = experiment_conf['experiment_dir']
+
 
     return DotMap(config)

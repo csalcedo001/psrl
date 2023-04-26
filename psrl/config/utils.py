@@ -38,3 +38,23 @@ def load_config(config_path):
             config = pickle.load(f)
 
     return config
+
+def save_config(config, config_dir, extension='yaml'):
+    extension = '.' + extension.lstrip('.')
+
+    if extension not in ['.json', '.yaml', '.yml', '.pkl']:
+        raise ValueError('Config file must be either json, yaml, or pickle')
+    
+    config_path = os.path.join(config_dir, 'config' + extension)
+    
+    # TODO: sort keys for readibility
+    
+    if extension == '.json':
+        with open(config_path, 'w') as f:
+            json.dump(config, f, indent=4)
+    elif extension in ['.yaml', '.yml']:
+        with open(config_path, 'w') as f:
+            yaml.safe_dump(config, f)
+    elif extension == '.pkl':
+        with open(config_path, 'wb') as f:
+            pickle.dump(config, f)

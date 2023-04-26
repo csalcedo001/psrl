@@ -1,5 +1,6 @@
 # Local
 wandb
+runs
 *.png
 *.gif
 *.mp4
