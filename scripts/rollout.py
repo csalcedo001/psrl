@@ -1,6 +1,8 @@
+import os
 import wandb
+import pickle
 
-from psrl.rollout import rollout_episode
+from psrl.rollout import rollout
 from psrl.utils import env_name_map, agent_name_map
 
 from arg_utils import get_parser, get_config
@@ -27,5 +29,20 @@ env = env_class(config.env_config)
 agent_class = agent_name_map[args.agent]
 agent = agent_class(env, config.agent_config)
 
+weights_path = os.path.join(config.data_dir, 'weights.pkl')
+agent.load(weights_path)
 
-rollout_episode(env, agent, render=config.render, verbose=True, max_steps=config.max_steps)
+
+trajectories = rollout(
+    env,
+    agent,
+    config,
+    render=config.render,
+    verbose=True,
+    max_steps=config.max_steps
+)
+
+traj_path = os.path.join(config.experiment_dir, 'trajectories.pkl')
+
+with open(traj_path, 'wb') as out_file:
+    pickle.dump(trajectories, out_file)

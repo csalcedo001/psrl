@@ -6,10 +6,11 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 
-from psrl import train, rollout
+from psrl.train import train
+from psrl.rollout import rollout
 from psrl.agents import OptimalAgent
 from psrl.config import get_agent_config, save_config
-from psrl.utils import train_episode, rollout_episode, env_name_map, agent_name_map
+from psrl.utils import env_name_map, agent_name_map
 
 from parallel import ParallelRunManager
 from arg_utils import get_parser, get_config

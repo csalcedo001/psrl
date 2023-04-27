@@ -1,4 +1,5 @@
 import numpy as np
+import pickle
 
 from .agent import Agent
 from .utils import solve_tabular_mdp
@@ -97,3 +98,19 @@ class PSRLAgent(Agent):
 
         # Solve for optimal policy
         self.pi, _ = solve_tabular_mdp(p, r, self.config.gamma, self.config.max_iter)
+    
+    def save(self, path):
+        data = {
+            'p_dist': self.p_dist,
+            'r_dist': self.r_dist,
+        }
+
+        with open(path, 'wb') as out_file:
+            pickle.dump(data, out_file)
+    
+    def load(self, path):
+        with open(path, 'rb') as in_file:
+            data = pickle.load(in_file)
+
+        self.p_dist = data['p_dist']
+        self.r_dist = data['r_dist']

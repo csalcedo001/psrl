@@ -1,9 +1,6 @@
 import os
-import wandb
-import numpy as np
 import imageio
 import matplotlib.pyplot as plt
-from tqdm import tqdm
 
 from psrl.train import train
 from psrl.rollout import rollout_episode
@@ -17,21 +14,25 @@ from utils import choose_gridworld_color
 
 envs = ['tworoom', 'fourroom']
 
-parser = get_parser(envs=envs)
+parser = get_parser(envs=envs, data_dir=True)
 args = parser.parse_args()
 config = get_config(args, envs=envs)
 save_config(config.toDict(), config.experiment_dir)
 
 
 # Get environment
-env_class = env_name_map[args.env]
+env_class = env_name_map[config.env]
 env = env_class(config.env_config)
 
 # Get agent
-agent_class = agent_name_map[args.agent]
+agent_class = agent_name_map[config.agent]
 agent = agent_class(env, config.agent_config)
 
-agent_trajectories = train(env, agent, config)
+if config.data_dir:
+    weights_path = os.path.join(config.data_dir, 'weights.pkl')
+    agent.load(weights_path)
+else:
+    train(env, agent, config)
 
 trajectory = rollout_episode(env, agent, max_steps=120, render=config.render, verbose=True)
 

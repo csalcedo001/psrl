@@ -10,3 +10,9 @@ class Agent():
     
     def update(self):
         raise NotImplementedError
+
+    def save(self, path):
+        raise NotImplementedError
+
+    def load(self, path):
+        raise NotImplementedError

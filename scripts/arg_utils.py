@@ -7,7 +7,7 @@ from psrl.utils import env_name_map, agent_name_map
 from runs import get_experiment_config
 
 
-def get_parser(envs=None, agents=None):
+def get_parser(envs=None, agents=None, data_dir=False):
     if envs == None:
         envs = list(env_name_map.keys())
         
@@ -24,6 +24,9 @@ def get_parser(envs=None, agents=None):
     parser.add_argument('--render', action='store_true', default=False, help='Render environment')
     parser.add_argument('--no-render', action='store_false', dest='render', help='Do not render environment')
     parser.add_argument('--verbose', action='store_true', default=False, help='Render environment')
+
+    if data_dir:
+        parser.add_argument('--data-dir', type=str, default=None, help='Data dir to load')
 
     return parser
 

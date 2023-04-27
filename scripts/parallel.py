@@ -102,13 +102,13 @@ class ParallelRunManager():
         self.allocator = ResourceAllocator(max_parallel_runs)
         self.id_to_thread = {}
     
-    def queue(self, command_or_function, args):
+    def queue(self, command_or_function, args=None):
         id = self.allocator.allocate()
 
         if id == None:
             return False
 
-        if type(command_or_function) == str:
+        if type(command_or_function) == list:
             command = command_or_function
             thread = threading.Thread(target=self._run_subprocess, args=(command, id))
             thread.start()
@@ -126,7 +126,7 @@ class ParallelRunManager():
             self.id_to_thread[id].join()
     
     def _run_subprocess(self, command, id):
-        resource = self.gpu_allocator.get_resource(id)
+        resource = self.allocator.get_resource(id)
 
         environ = os.environ.copy()
         # environ["CUDA_VISIBLE_DEVICES"] = str(resource)
