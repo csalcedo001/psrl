@@ -20,3 +20,27 @@ conda activate psrl
 pip install -r requirements.txt
 pip install -e .
 ```
+
+
+## Running experiments
+
+Main executables:
+* scripts/plot_regret.py: plots like Figure 2 in the paper
+* scripts/gridworld_video.py: video of trajectory (gridworlds only)
+
+Arguments:
+* agent: psrl, random_agent, or optimal
+* env: riverswim, randommdp, tworoom, fourroom
+
+
+Run the next command to get a plot of the regret of PSRL vs (so far) a random agent (soon UCRL2)
+
+```bash
+python scripts/plot_regret.py --env riverswim --max_steps 10000
+```
+
+To get a video of the trajectory of an agent through a gridworld, run the following command
+
+```bash
+python scripts/gridworld_video.py --agent psrl --env tworoom
+```
