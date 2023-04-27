@@ -5,7 +5,9 @@ import imageio
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from psrl.utils import train_episode, rollout_episode, env_name_map, agent_name_map
+from psrl.train import train
+from psrl.rollout import rollout_episode
+from psrl.utils import env_name_map, agent_name_map
 from psrl.config import save_config
 
 from arg_utils import get_parser, get_config
@@ -29,16 +31,9 @@ env = env_class(config.env_config)
 agent_class = agent_name_map[args.agent]
 agent = agent_class(env, config.agent_config)
 
-episodes = 100
-remaining_steps = config.max_steps
-pbar = tqdm(total=config.max_steps)
-while remaining_steps > 0:
-    agent_trajectory = train_episode(env, agent)
-    elapsed_steps = len(agent_trajectory)
-    remaining_steps -= elapsed_steps
-    pbar.update(elapsed_steps)
+agent_trajectories = train(env, agent, config)
 
-trajectory = rollout_episode(env, agent, max_steps=1000, render=config.render, verbose=True)
+trajectory = rollout_episode(env, agent, max_steps=120, render=config.render, verbose=True)
 
 states = [t[0] for t in trajectory]
 states += [trajectory[-1][3]]

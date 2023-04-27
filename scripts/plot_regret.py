@@ -5,6 +5,8 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
+
+from psrl import train, rollout
 from psrl.agents import OptimalAgent
 from psrl.config import get_agent_config, save_config
 from psrl.utils import train_episode, rollout_episode, env_name_map, agent_name_map
@@ -66,40 +68,13 @@ class RegretBenchmarkExperiment:
         agent = agent_class(env, config.agent_config)
 
         # Get optimal policy for environment
-        oracle_config = get_agent_config('optimal')
-        oracle = OptimalAgent(env, oracle_config)
-
-
-        if config.env_config.max_steps:
-            episodes = config.max_steps // env.max_steps
-        else:
-            episodes = config.max_steps // 10
-
-
-
-        agent_trajectories = []
-        remaining_steps = config.max_steps
-        pbar = tqdm(total=config.max_steps)
-        while remaining_steps > 0:
-            agent_trajectory = train_episode(env, agent)
-            agent_trajectories += agent_trajectory
-            elapsed_steps = len(agent_trajectory)
-            remaining_steps -= elapsed_steps
-            pbar.update(elapsed_steps)
-
-
-        
         oracle_env = copy.deepcopy(env)
+        oracle_config = get_agent_config('optimal')
+        oracle = OptimalAgent(oracle_env, oracle_config)
 
-        oracle_trajectories = []
-        remaining_steps = config.max_steps
-        pbar = tqdm(total=config.max_steps)
-        while remaining_steps > 0:
-            oracle_trajectory = rollout_episode(oracle_env, oracle)
-            oracle_trajectories += oracle_trajectory
-            elapsed_steps = len(oracle_trajectory)
-            remaining_steps -= elapsed_steps
-            pbar.update(elapsed_steps)
+
+        agent_trajectories = train(env, agent, config)
+        oracle_trajectories = rollout(env, oracle, config)
 
         regrets = []
         regret = 0

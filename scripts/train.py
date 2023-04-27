@@ -1,10 +1,14 @@
+import os
 import copy
 import wandb
+import pickle
 from tqdm import tqdm
 
+from psrl.train import train
+from psrl.rollout import rollout
 from psrl.agents import OptimalAgent
 from psrl.config import get_agent_config
-from psrl.utils import train_episode, rollout_episode, env_name_map, agent_name_map
+from psrl.utils import env_name_map, agent_name_map
 
 from arg_utils import get_parser, get_config
 
@@ -31,8 +35,9 @@ agent_class = agent_name_map[args.agent]
 agent = agent_class(env, config.agent_config)
 
 # Get optimal policy for environment
+oracle_env = copy.deepcopy(env)
 oracle_config = get_agent_config('optimal')
-oracle = OptimalAgent(env, oracle_config)
+oracle = OptimalAgent(oracle_env, oracle_config)
 
 
 
@@ -41,30 +46,8 @@ print("Action space:", env.action_space)
 
 
 
-
-agent_trajectories = []
-remaining_steps = config.max_steps
-pbar = tqdm(total=config.max_steps)
-while remaining_steps > 0:
-    agent_trajectory = train_episode(env, agent)
-    agent_trajectories += agent_trajectory
-    elapsed_steps = len(agent_trajectory)
-    remaining_steps -= elapsed_steps
-    pbar.update(elapsed_steps)
-
-
-
-oracle_env = copy.deepcopy(env)
-
-oracle_trajectories = []
-remaining_steps = config.max_steps
-pbar = tqdm(total=config.max_steps)
-while remaining_steps > 0:
-    oracle_trajectory = rollout_episode(oracle_env, oracle)
-    oracle_trajectories += oracle_trajectory
-    elapsed_steps = len(oracle_trajectory)
-    remaining_steps -= elapsed_steps
-    pbar.update(elapsed_steps)
+agent_trajectories = train(env, agent, config)
+oracle_trajectories = rollout(env, oracle, config)
 
 
 regrets = []

@@ -1,6 +1,7 @@
 import wandb
 
-from psrl.utils import rollout_episode, env_name_map, agent_name_map
+from psrl.rollout import rollout_episode
+from psrl.utils import env_name_map, agent_name_map
 
 from arg_utils import get_parser, get_config
 
@@ -27,4 +28,4 @@ agent_class = agent_name_map[args.agent]
 agent = agent_class(env, config.agent_config)
 
 
-rollout_episode(env, agent, render=config.render, verbose=True)
+rollout_episode(env, agent, render=config.render, verbose=True, max_steps=config.max_steps)
