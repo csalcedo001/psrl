@@ -22,11 +22,11 @@ def get_parser(envs=None, agents=None, data_dir=False):
     parser.add_argument('--env', type=str, default=envs[0], help='Environment to use')
     parser.add_argument('--max_steps', type=int, default=10000, help='Number of episodes to run')
     parser.add_argument('--render', action='store_true', default=False, help='Render environment')
-    parser.add_argument('--no-render', action='store_false', dest='render', help='Do not render environment')
+    parser.add_argument('--no_render', action='store_false', dest='render', help='Do not render environment')
     parser.add_argument('--verbose', action='store_true', default=False, help='Render environment')
 
     if data_dir:
-        parser.add_argument('--data-dir', type=str, default=None, help='Data dir to load')
+        parser.add_argument('--data_dir', type=str, default=None, help='Data dir to load')
 
     return parser
 

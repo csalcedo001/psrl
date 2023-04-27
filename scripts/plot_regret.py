@@ -102,11 +102,12 @@ save_config(config.toDict(), config.experiment_dir)
 
 # Run experiment and get results
 agents = ['psrl', 'random_agent']
-runs_per_agent = 2
+runs_per_agent = 20
 max_parallel_runs = 1
 
 # TODO: fix parallelization, it's slower than serial execution...
 # do so by using multiprocessing instead of multithreading
+# also by using PyTorch to send computation to GPUs
 experiment = RegretBenchmarkExperiment(config, agents, runs_per_agent, max_parallel_runs)
 
 results = experiment.run()
