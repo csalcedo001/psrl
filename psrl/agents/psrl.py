@@ -1,5 +1,6 @@
 import numpy as np
 import pickle
+import time
 
 from .agent import Agent
 from .utils import solve_tabular_mdp
@@ -80,20 +81,20 @@ class PSRLAgent(Agent):
         n_s = self.env.observation_space.n
         n_a = self.env.action_space.n
 
-        p = np.zeros((n_s, n_a, n_s))
-        r = np.zeros((n_s, n_a, n_s))
+        # Compute reward function
+        mu0, lambd, alpha, beta = np.transpose(self.r_dist, (3, 0, 1, 2))
 
+        tau = np.random.gamma(alpha, 1. / beta)
+        mu = np.random.normal(mu0, 1. / np.sqrt(lambd * tau))
+
+        r = mu
+
+
+        # Compute transition probabilities
+        p = np.zeros((n_s, n_a, n_s))
         for s in range(n_s):
             for a in range(n_a):
                 p[s, a] = np.random.dirichlet(self.p_dist[s, a])
-                for s_ in range(n_s):
-                    mu0, lambd, alpha, beta = self.r_dist[s, a, s_]
-
-                    # Sample from normal-gamma distribution
-                    tau = np.random.gamma(alpha, 1. / beta)
-                    mu = np.random.normal(mu0, 1. / np.sqrt(lambd * tau))
-
-                    r[s, a, s_] = mu
 
 
         # Solve for optimal policy
