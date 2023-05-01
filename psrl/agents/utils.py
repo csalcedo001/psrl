@@ -1,29 +1,34 @@
 import numpy as np
+import torch
 
 
-def solve_tabular_mdp(p, r, gamma, max_iter):
+def solve_tabular_mdp(p, r, gamma, max_iter, device='cpu'):
+    p = torch.Tensor(p)
+    r = torch.Tensor(r)
+
     n_s = p.shape[0]
 
-    s_idx = np.arange(n_s)
+    s_idx = torch.arange(n_s)
 
-    ones = np.eye(n_s)
-    pi = np.zeros(n_s, dtype=int)
+    ones = torch.eye(n_s)
+    pi = torch.zeros(n_s, dtype=int)
 
-    p_r = np.einsum('ijk, ijk -> ij', p, r)
+    p_r = torch.einsum('ijk, ijk -> ij', p, r)
     q = None
 
     for i in range(max_iter):
         # Solve for Q values
-        v = np.linalg.solve(ones - gamma * p[s_idx, pi, :], p_r[s_idx, pi])
-        q = p_r + gamma * np.einsum('ijk, k -> ij', p, v)
-
-        # Get greedy policy - break ties at random
-        pi_ = np.array([np.random.choice(np.argwhere(qs == np.amax(qs))[0]) \
-                        for qs in q])
+        pi_idx = pi.numpy()
+        v = torch.linalg.solve(ones - gamma * p[s_idx, pi_idx, :], p_r[s_idx, pi_idx])
+        q = p_r + gamma * torch.einsum('ijk, k -> ij', p, v)
+        pi_ = torch.argmax(q, axis=1)
         
-        if np.prod(pi_ == pi) == 1:
+        if torch.all(pi_ == pi):
             break
         else:
             pi = pi_
+
+    pi = pi.numpy()
+    q = q.numpy()
 
     return pi, q
