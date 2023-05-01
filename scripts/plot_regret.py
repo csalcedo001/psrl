@@ -76,7 +76,7 @@ class RegretBenchmarkExperiment:
 
 
         agent_trajectories = train(env, agent, config)
-        oracle_trajectories = rollout(env, oracle, config)
+        oracle_trajectories = rollout(oracle_env, oracle, config)
 
         agent_rewards = [t[2] for t in agent_trajectories]
         oracle_rewards = [t[2] for t in oracle_trajectories]

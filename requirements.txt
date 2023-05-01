@@ -7,3 +7,4 @@ wandb==0.15.0
 moviepy==1.0.3
 imageio==2.27.0
 matplotlib==3.7.1
+torch==2.0.0
