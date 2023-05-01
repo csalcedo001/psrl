@@ -24,10 +24,10 @@ def train_episode(env, agent, render=False, verbose=False, max_steps=100):
 
         if render:
             env.render()
-
+        
+        agent.update()
 
         if done:
-            agent.update()
             break
             
         state = next_state

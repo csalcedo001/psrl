@@ -1,6 +1,7 @@
 import numpy as np
 import pickle
-import time
+import torch
+import torch.distributions as dist
 
 from .agent import Agent
 from .utils import solve_tabular_mdp
@@ -21,11 +22,12 @@ class PSRLAgent(Agent):
         n_a = env.action_space.n
 
         # Initialize posterior distributions
-        self.p_dist = config.kappa * np.ones((n_s, n_a, n_s))
-        self.r_dist = np.tile([mu, lambd, alpha, beta], (n_s, n_a, n_s, 1))
+        self.p_dist = config.kappa * torch.ones((n_s, n_a, n_s))
+        self.r_dist = torch.tile(torch.Tensor([mu, lambd, alpha, beta]), (n_s, n_a, n_s, 1))
 
         self.pi = None
-        self.buffer = []
+        self.p_count = np.zeros((n_s, n_a, n_s)).tolist()
+        self.r_total = np.zeros((n_s, n_a, n_s)).tolist()
         self.steps = 0
 
         self.update_policy()
@@ -39,65 +41,56 @@ class PSRLAgent(Agent):
         return self.pi[state]
 
     def observe(self, transition):
-        self.buffer.append(transition)
+        s, a, r, s_ = transition
+
+        self.p_count[s][a][s_] += 1
+        self.r_total[s][a][s_] += r
     
     def update(self):
-        self.update_posterior()
-        self.update_policy()
+        if self.steps % self.config.tau == 0:
+            self.update_posterior()
+            self.update_policy()
     
     def update_posterior(self):
         n_s = self.env.observation_space.n
         n_a = self.env.action_space.n
 
-        p_count = np.zeros((n_s, n_a, n_s))
-        r_sum = np.zeros((n_s, n_a, n_s))
+        p_count = torch.Tensor(self.p_count)
+        r_total = torch.Tensor(self.r_total)
 
-        for s, a, r, s_ in self.buffer:
-            p_count[s, a, s_] += 1
-            r_sum[s, a, s_] += r
+        # Update transition probabilities
+        self.p_dist += p_count
 
-        for s in range(n_s):
-            for a in range(n_a):
-                self.p_dist[s, a] += p_count[s, a]
-        
-                for s_ in range(n_s):
-                    mu0, lambd, alpha, beta = self.r_dist[s, a, s_]
-                    n = p_count[s, a, s_]
+        # Update reward function
+        mu0, lambd, alpha, beta = torch.moveaxis(self.r_dist, 3, 0)
 
-                    # Update normal-gamma distribution
-                    mu = (lambd * mu0 + r_sum[s, a, s_]) / (lambd + n)
-                    lambd += n
-                    alpha += n / 2.
-                    beta += (r_sum[s, a, s_] ** 2. + lambd * mu0 ** 2. - lambd * mu ** 2.) / 2
+        mu = (lambd * mu0 + r_total) / (lambd + p_count)
+        lambd += p_count
+        alpha += p_count / 2.
+        beta += (r_total ** 2. + lambd * mu0 ** 2. - lambd * mu ** 2.) / 2
 
-                    self.r_dist[s, a, s_] = [mu, lambd, alpha, beta]
+        self.r_dist = torch.stack([mu, lambd, alpha, beta], dim=3)
         
         
         if self.steps % self.config.tau == 0:
-             self.buffer = []
+            self.p_count = np.zeros((n_s, n_a, n_s)).tolist()
+            self.r_total = np.zeros((n_s, n_a, n_s)).tolist()
 
     def update_policy(self):
-        # Sample from posterior
-        n_s = self.env.observation_space.n
-        n_a = self.env.action_space.n
+        ### Sample from posterior
+        # Compute transition probabilities
+        p = dist.Dirichlet(self.p_dist).sample()
 
         # Compute reward function
-        mu0, lambd, alpha, beta = np.transpose(self.r_dist, (3, 0, 1, 2))
+        mu0, lambd, alpha, beta = torch.moveaxis(self.r_dist, 3, 0)
 
-        tau = np.random.gamma(alpha, 1. / beta)
-        mu = np.random.normal(mu0, 1. / np.sqrt(lambd * tau))
+        tau = dist.Gamma(alpha, 1. / beta).sample()
+        mu = dist.Normal(mu0, 1. / torch.sqrt(lambd * tau)).sample()
 
         r = mu
 
 
-        # Compute transition probabilities
-        p = np.zeros((n_s, n_a, n_s))
-        for s in range(n_s):
-            for a in range(n_a):
-                p[s, a] = np.random.dirichlet(self.p_dist[s, a])
-
-
-        # Solve for optimal policy
+        ### Solve for optimal policy
         self.pi, _ = solve_tabular_mdp(p, r, self.config.gamma, self.config.max_iter)
     
     def save(self, path):
