@@ -3,6 +3,7 @@ import copy
 import time
 import numpy as np
 from tqdm import tqdm
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 
@@ -77,13 +78,13 @@ class RegretBenchmarkExperiment:
         agent_trajectories = train(env, agent, config)
         oracle_trajectories = rollout(env, oracle, config)
 
+        agent_rewards = [t[2] for t in agent_trajectories]
+        oracle_rewards = [t[2] for t in oracle_trajectories]
+
         regrets = []
         regret = 0
-        for t in range(len(agent_trajectories)):
-            agent_reward = agent_trajectories[min(t, len(agent_trajectories) - 1)][2]
-            oracle_reward = oracle_trajectories[min(t, len(oracle_trajectories) - 1)][2]
-
-            regret += oracle_reward - agent_reward
+        for t in range(config.max_steps):
+            regret += oracle_rewards[t] - agent_rewards[t]
             regrets.append(regret)
 
         
@@ -121,15 +122,18 @@ figure = plt.figure()
 
 plt.title(f'Regret for {env_plot_name_map[config.env]} environment')
 
-for agent in agents:
+cmap = mpl.colormaps['tab10']
+for i, agent in enumerate(agents):
     mean_regret = np.mean(results[agent], axis=0)
     min_regret = np.min(results[agent], axis=0)
     max_regret = np.max(results[agent], axis=0)
 
     x_index = np.arange(len(mean_regret))
 
-    plt.fill_between(x_index, min_regret, max_regret, alpha=0.5)
-    plt.plot(x_index, mean_regret, label=agent_plot_name_map[agent])
+    c = cmap(i % 10)
+
+    plt.fill_between(x_index, min_regret, max_regret, alpha=0.5, color=c)
+    plt.plot(x_index, mean_regret, label=agent_plot_name_map[agent], color=c)
 
 plt.legend()
 plt.savefig(filename)
