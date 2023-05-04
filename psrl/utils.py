@@ -9,6 +9,7 @@ from .envs import (
 from .agents import (
     RandomAgent,
     PSRLAgent,
+    UCRL2Agent,
     OptimalAgent,
 )
 
@@ -23,6 +24,7 @@ env_name_map = {
 
 agent_name_map = {
     'psrl': PSRLAgent,
+    'ucrl2': UCRL2Agent,
     'random_agent': RandomAgent,
     'optimal': OptimalAgent,
 }

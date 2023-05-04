@@ -5,7 +5,7 @@ import pickle
 from tqdm import tqdm
 
 from psrl.train import train
-from psrl.rollout import rollout_episode
+from psrl.rollout import rollout_episode, rollout
 from psrl.agents import OptimalAgent
 from psrl.config import get_agent_config
 from psrl.utils import env_name_map, agent_name_map
