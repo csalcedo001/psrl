@@ -2,7 +2,6 @@ import os
 import copy
 import time
 import numpy as np
-from tqdm import tqdm
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
@@ -25,7 +24,7 @@ class RegretBenchmarkExperiment:
             agents,
             runs_per_agent=1,
             max_parallel_runs=1,
-            retry_freq=5
+            retry_freq=1,
         ):
 
         self.run_config = run_config
@@ -60,6 +59,7 @@ class RegretBenchmarkExperiment:
     def run_instance(self, func_args):
         config = self.run_config
         config['agent'] = func_args['agent']
+        config = get_config(config)
 
         # Get environment
         env_class = env_name_map[config.env]
@@ -102,7 +102,7 @@ save_config(config.toDict(), config.experiment_dir)
 
 
 # Run experiment and get results
-agents = ['psrl', 'random_agent']
+agents = ['psrl', 'ucrl2']
 runs_per_agent = 20
 max_parallel_runs = 1
 

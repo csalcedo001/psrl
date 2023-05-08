@@ -49,7 +49,12 @@ def get_config(args, envs=None, agents=None):
         raise ValueError('Max number of steps must be at least 1')
     
 
-    config = dict(vars(args))
+    if type(args) == argparse.Namespace:
+        config = dict(vars(args))
+    elif type(args) == DotMap:
+        config = args.toDict()
+    elif type(args) == dict:
+        config = args
 
     config['env_config'] = get_env_config(args.env)
     config['agent_config'] = get_agent_config(args.agent)

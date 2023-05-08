@@ -7,6 +7,7 @@ env_plot_name_map = {
 }
 agent_plot_name_map = {
     'psrl': 'PSRL',
+    'ucrl2': 'UCRL2',
     'random_agent': 'Random',
     'optimal': 'Optimal',
 }
