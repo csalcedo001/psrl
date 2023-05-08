@@ -13,6 +13,26 @@ from utils import choose_gridworld_color
 
 
 
+
+def init_plt_grid(ax, env):
+    plt.xlim(0, env.cols)
+    plt.ylim(0, env.rows)
+
+    ax.set_aspect('equal')
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    for i in range(env.rows):
+        for j in range(env.cols):
+            color = choose_gridworld_color(env.grid[i][j])
+            
+            x = j
+            y = env.rows - i - 1
+
+            ax.add_patch(plt.Rectangle((x, y), 1, 1, color=color))
+
+
+
 ### Get trained policy
 
 envs = ['tworoom', 'fourroom']
@@ -46,32 +66,18 @@ states += [trajectory[-1][3]]
 
 ### Make video
 
-root = config.experiment_dir
-
-fig, ax = plt.subplots()
-
-plt.xlim(0, env.cols)
-plt.ylim(0, env.rows)
-
-ax.set_aspect('equal')
-ax.set_xticks([])
-ax.set_yticks([])
-
 state_to_pos = {}
-
 for i in range(env.rows):
     for j in range(env.cols):
-        color = choose_gridworld_color(env.grid[i][j])
-        
-        x = j
-        y = env.rows - i - 1
-
-        ax.add_patch(plt.Rectangle((x, y), 1, 1, color=color))
-
         state_to_pos[env.state_id[i, j]] = [i, j]
 
 
+root = config.experiment_dir
 frame_filename = f'{root}/frame.png'
+
+
+fig, ax = plt.subplots()
+init_plt_grid(ax, env)
 
 frames = []
 for t, state in enumerate(states):
@@ -105,7 +111,7 @@ imageio.mimsave(f'{root}/trajectory.mp4', frames, fps=2)
 
 
 
-### Make policy plot
+### Plot policy
 
 # Get vectors for each state
 origins = []
@@ -117,19 +123,24 @@ for state in range(env.observation_space.n):
     axis = action % 2
     direction = action // 2
 
-    # Correct for plot
+    
+    # Correction for plot
     if axis == 0:
         direction = 1 - direction
+
 
     pos = np.array(state_to_pos[state])
 
     next_pos = pos.copy()
     next_pos[axis] += 1 if direction == 0 else -1
 
+
+    # Correction for plot
     pos = pos[::-1]
     pos[1] = env.rows - pos[1] - 1
     next_pos = next_pos[::-1]
     next_pos[1] = env.rows - next_pos[1] - 1
+
 
     dir_vec = next_pos - pos
     
@@ -141,22 +152,7 @@ vectors = np.array(vectors).T
 
 
 fig, ax = plt.subplots()
-
-plt.xlim(0, env.cols)
-plt.ylim(0, env.rows)
-
-ax.set_aspect('equal')
-ax.set_xticks([])
-ax.set_yticks([])
-
-for i in range(env.rows):
-    for j in range(env.cols):
-        color = choose_gridworld_color(env.grid[i][j])
-        
-        x = j
-        y = env.rows - i - 1
-
-        ax.add_patch(plt.Rectangle((x, y), 1, 1, color=color))
+init_plt_grid(ax, env)
 
 plt.quiver(*origins, *vectors, color='#000000', scale=1, scale_units='xy', angles='xy')
 
