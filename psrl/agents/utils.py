@@ -3,7 +3,7 @@ import numpy as np
 import math
 
 
-def solve_tabular_mdp(p, r, gamma, max_iter, device='cpu'):
+def solve_tabular_mdp(p, r, gamma, max_iter):
     p = torch.Tensor(p)
     r = torch.Tensor(r)
 
@@ -14,7 +14,11 @@ def solve_tabular_mdp(p, r, gamma, max_iter, device='cpu'):
     ones = torch.eye(n_s)
     pi = torch.zeros(n_s, dtype=int)
 
-    p_r = torch.einsum('ijk, ijk -> ij', p, r)
+    if len(r.shape) == 2:
+        p_r = torch.einsum('ijk, ij -> ij', p, r)
+    elif len(r.shape) == 3:
+        p_r = torch.einsum('ijk, ijk -> ij', p, r)
+    
     q = None
 
     for i in range(max_iter):

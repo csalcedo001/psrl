@@ -23,11 +23,11 @@ class PSRLAgent(Agent):
 
         # Initialize posterior distributions
         self.p_dist = config.kappa * torch.ones((n_s, n_a, n_s))
-        self.r_dist = torch.tile(torch.Tensor([mu, lambd, alpha, beta]), (n_s, n_a, n_s, 1))
+        self.r_dist = torch.tile(torch.Tensor([mu, lambd, alpha, beta]), (n_s, n_a, 1))
 
         self.pi = None
         self.p_count = np.zeros((n_s, n_a, n_s)).tolist()
-        self.r_total = np.zeros((n_s, n_a, n_s)).tolist()
+        self.r_total = np.zeros((n_s, n_a)).tolist()
         self.steps = 0
 
         self.update_policy()
@@ -44,7 +44,7 @@ class PSRLAgent(Agent):
         s, a, r, s_ = transition
 
         self.p_count[s][a][s_] += 1
-        self.r_total[s][a][s_] += r
+        self.r_total[s][a] += r
     
     def update(self):
         if self.steps % self.config.tau == 0:
@@ -62,19 +62,20 @@ class PSRLAgent(Agent):
         self.p_dist += p_count
 
         # Update reward function
-        mu0, lambd, alpha, beta = torch.moveaxis(self.r_dist, 3, 0)
+        mu0, lambd, alpha, beta = torch.moveaxis(self.r_dist, 2, 0)
 
-        mu = (lambd * mu0 + r_total) / (lambd + p_count)
-        lambd += p_count
-        alpha += p_count / 2.
+        r_count = p_count.sum(axis=2)
+        mu = (lambd * mu0 + r_total) / (lambd + r_count)
+        lambd += r_count
+        alpha += r_count / 2.
         beta += (r_total ** 2. + lambd * mu0 ** 2. - lambd * mu ** 2.) / 2
 
-        self.r_dist = torch.stack([mu, lambd, alpha, beta], dim=3)
+        self.r_dist = torch.stack([mu, lambd, alpha, beta], dim=2)
         
         
         if self.steps % self.config.tau == 0:
             self.p_count = np.zeros((n_s, n_a, n_s)).tolist()
-            self.r_total = np.zeros((n_s, n_a, n_s)).tolist()
+            self.r_total = np.zeros((n_s, n_a)).tolist()
 
     def update_policy(self):
         ### Sample from posterior
@@ -82,7 +83,7 @@ class PSRLAgent(Agent):
         p = dist.Dirichlet(self.p_dist).sample()
 
         # Compute reward function
-        mu0, lambd, alpha, beta = torch.moveaxis(self.r_dist, 3, 0)
+        mu0, lambd, alpha, beta = torch.moveaxis(self.r_dist, 2, 0)
 
         tau = dist.Gamma(alpha, 1. / beta).sample()
         mu = dist.Normal(mu0, 1. / torch.sqrt(lambd * tau)).sample()
