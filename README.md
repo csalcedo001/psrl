@@ -26,7 +26,7 @@ pip install -e .
 
 Main executables:
 * scripts/plot_regret.py: plots like Figure 2 in the paper
-* scripts/gridworld_video.py: video of trajectory (gridworlds only)
+* scripts/gridworld_plots.py: plots and video of trajectory (gridworlds only)
 
 Additional:
 * scripts/train.py: the previous script perform training by default, so this script is just a proof-of-concept that training is done correctly. Note: Uses W&B by default
@@ -46,7 +46,7 @@ python scripts/plot_regret.py --experiment_name riverswim_regret --env riverswim
 To get a video of the trajectory of an agent through a gridworld, run the next example command
 
 ```bash
-python scripts/gridworld_video.py --experiment_name psrl_tworoom --agent psrl --env tworoom
+python scripts/gridworld_plots.py --experiment_name psrl_tworoom --agent psrl --env tworoom
 ```
 
 The script for training, train.py, can be run with the followiing command

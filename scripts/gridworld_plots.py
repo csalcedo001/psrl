@@ -1,5 +1,6 @@
 import os
 import imageio
+import numpy as np
 import matplotlib.pyplot as plt
 
 from psrl.train import train
@@ -11,6 +12,8 @@ from arg_utils import get_parser, get_config
 from utils import choose_gridworld_color
 
 
+
+### Get trained policy
 
 envs = ['tworoom', 'fourroom']
 
@@ -40,6 +43,8 @@ states = [t[0] for t in trajectory]
 states += [trajectory[-1][3]]
 
 
+
+### Make video
 
 root = config.experiment_dir
 
@@ -96,3 +101,64 @@ os.remove(frame_filename)
 
 print("Saving video...")
 imageio.mimsave(f'{root}/trajectory.mp4', frames, fps=2)
+
+
+
+
+### Make policy plot
+
+# Get vectors for each state
+origins = []
+vectors = []
+for state in range(env.observation_space.n):
+    action = agent.act(state)
+
+    # up: 0, right: 1, down: 2, left: 3
+    axis = action % 2
+    direction = action // 2
+
+    # Correct for plot
+    if axis == 0:
+        direction = 1 - direction
+
+    pos = np.array(state_to_pos[state])
+
+    next_pos = pos.copy()
+    next_pos[axis] += 1 if direction == 0 else -1
+
+    pos = pos[::-1]
+    pos[1] = env.rows - pos[1] - 1
+    next_pos = next_pos[::-1]
+    next_pos[1] = env.rows - next_pos[1] - 1
+
+    dir_vec = next_pos - pos
+    
+    origins.append(pos + 0.5 - dir_vec * 0.4)
+    vectors.append(dir_vec * 0.8)
+
+origins = np.array(origins).T
+vectors = np.array(vectors).T
+
+
+fig, ax = plt.subplots()
+
+plt.xlim(0, env.cols)
+plt.ylim(0, env.rows)
+
+ax.set_aspect('equal')
+ax.set_xticks([])
+ax.set_yticks([])
+
+for i in range(env.rows):
+    for j in range(env.cols):
+        color = choose_gridworld_color(env.grid[i][j])
+        
+        x = j
+        y = env.rows - i - 1
+
+        ax.add_patch(plt.Rectangle((x, y), 1, 1, color=color))
+
+plt.quiver(*origins, *vectors, color='#000000', scale=1, scale_units='xy', angles='xy')
+
+file_path = os.path.join(root, 'policy.png')
+plt.savefig(file_path)
