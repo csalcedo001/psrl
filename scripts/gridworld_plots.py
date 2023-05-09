@@ -1,8 +1,10 @@
 import os
 import imageio
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 
+from psrl.agents import PSRLAgent, UCRL2Agent
 from psrl.train import train
 from psrl.rollout import rollout_episode
 from psrl.utils import env_name_map, agent_name_map
@@ -158,3 +160,42 @@ plt.quiver(*origins, *vectors, color='#000000', scale=1, scale_units='xy', angle
 
 file_path = os.path.join(root, 'policy.png')
 plt.savefig(file_path)
+
+
+
+### Plot heatmap
+if isinstance(agent, UCRL2Agent):
+    # r_hat = agent.total_rewards / np.clip(agent.total_visitations, 1, None)
+    r_hat = agent.Rk
+elif isinstance(agent, PSRLAgent):
+    r_hat = np.array(agent.r_total) / np.clip(np.array(agent.p_count).sum(axis=2), 1, None)
+else:
+    r_hat = None
+
+
+
+if r_hat is not None:
+    r = r_hat.sum(axis=1)
+    r_min = r.min()
+    r_max = r.max()
+    print(r)
+    print(r_min, r_max)
+    
+
+    cmap = mpl.colormaps['plasma']
+    norm = mpl.colors.Normalize(vmin=r_min, vmax=r_max)
+    cmap = mpl.cm.ScalarMappable(norm=norm, cmap=cmap)
+
+    fig, ax = plt.subplots()
+    init_plt_grid(ax, env)
+    
+    for state in range(env.observation_space.n):
+        i, j = state_to_pos[state]
+            
+        x = j
+        y = env.rows - i - 1
+
+        ax.add_patch(plt.Rectangle((x, y), 1, 1, color=cmap.to_rgba(r[state])))
+        
+    file_path = os.path.join(root, 'reward_heatmap.png')
+    plt.savefig(file_path)
