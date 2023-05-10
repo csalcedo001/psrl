@@ -75,6 +75,7 @@ class RegretBenchmarkExperiment:
         oracle = OptimalAgent(oracle_env, oracle_config)
 
 
+        print(f'Running {func_args["agent"]} agent, run {func_args["run_id"]}...')
         agent_trajectories = train(env, agent, config)
         oracle_trajectories = rollout(oracle_env, oracle, config)
 
@@ -102,7 +103,7 @@ save_config(config.toDict(), config.experiment_dir)
 
 
 # Run experiment and get results
-agents = ['psrl', 'ucrl2']
+agents = ['psrl', 'kl_ucrl']
 runs_per_agent = 20
 max_parallel_runs = 1
 
