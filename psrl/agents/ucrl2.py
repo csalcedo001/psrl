@@ -9,17 +9,16 @@ import numpy as np
 import random as rd
 import copy as cp
 
+
 class UCRL2Agent(Agent):
 	def __init__(self, env, config):
 		Agent.__init__(self, env, config)
-		
-		self.env = env
-		self.config = config
 
 		self.nS = env.observation_space.n
 		self.nA = env.action_space.n
 		self.t = 1
 		self.delta = config.delta
+		
 		self.observations = [[], [], []]
 		self.vk = np.zeros((self.nS, self.nA))
 		self.Nk = np.zeros((self.nS, self.nA))
@@ -29,7 +28,6 @@ class UCRL2Agent(Agent):
 		self.Pk = np.zeros((self.nS, self.nA, self.nS))
 		self.Rk = np.zeros((self.nS, self.nA))
 		self.u = np.zeros(self.nS)
-		self.span = []
 
 	def name(self):
 		return "UCRL2"
@@ -66,6 +64,7 @@ class UCRL2Agent(Agent):
 		else:
 			max_p = cp.deepcopy(p_estimate[s, a])
 			max_p[sorted_indices[-1]] += self.p_distances[s, a] / 2
+			max_p = np.clip(max_p, None, 1)
 			l = 0
 			while sum(max_p) > 1:
 				max_p[sorted_indices[l]] = max([0, 1 - sum(max_p) + max_p[sorted_indices[l]]])# Error?
@@ -99,7 +98,6 @@ class UCRL2Agent(Agent):
 				print("No convergence in EVI")
 				break
 		self.u = u0
-		#self.span.append(max(u0) - min(u0))
 
 	# To start a new episode (init var, computes estmates and run EVI).
 	def new_episode(self):
@@ -118,20 +116,11 @@ class UCRL2Agent(Agent):
 
 	# To reinitialize the learner with a given initial state inistate.
 	def reset(self,inistate):
-		self.t = 1
-		self.observations = [[], [], []]
-		self.vk = np.zeros((self.nS, self.nA))
-		self.Nk = np.zeros((self.nS, self.nA))
+		self.observations = [[inistate], [], []]
 		self.new_episode()
-		self.u = np.zeros(self.nS)
-		self.Pk = np.zeros((self.nS, self.nA, self.nS))
-		self.Rk = np.zeros((self.nS, self.nA))
-		self.span = [0]
 
 	# To chose an action for a given state (and start a new episode if necessary -> stopping criterion defined here).
-	def act(self, state):
-		if self.observations[0] == []:
-			self.observations[0] = [state]
+	def act(self,state):
 		action = self.policy[state]
 		if self.vk[state, action] >= max([1, self.Nk[state, action]]): # Stoppping criterion
 			self.new_episode()
@@ -148,7 +137,7 @@ class UCRL2Agent(Agent):
 		self.updateP()
 		self.updateR()
 		self.t += 1
-
+	
 	def update(self):
 		pass
 
@@ -372,7 +361,6 @@ class KLUCRLAgent(UCRL2Agent):
 #         pass
     
 #     def update_policy(self):
-#         print("UPDATE")
 #         n_s = self.env.observation_space.n
 #         n_a = self.env.action_space.n
 

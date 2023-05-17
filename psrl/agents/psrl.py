@@ -31,6 +31,9 @@ class PSRLAgent(Agent):
         self.steps = 0
 
         self.update_policy()
+        
+    def reset(self, state):
+        pass
     
     def act(self, state):
         self.steps += 1
