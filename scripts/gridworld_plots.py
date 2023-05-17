@@ -178,8 +178,6 @@ if r_hat is not None:
     r = r_hat.sum(axis=1)
     r_min = r.min()
     r_max = r.max()
-    print(r)
-    print(r_min, r_max)
     
 
     cmap = mpl.colormaps['plasma']

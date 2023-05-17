@@ -4,6 +4,8 @@ def train_episode(env, agent, render=False, verbose=False, max_steps=100):
     state = env.reset()
     if render:
         env.render()
+    
+    agent.reset(state)
 
     trajectory = []
     for i in range(max_steps):

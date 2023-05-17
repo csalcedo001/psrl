@@ -2,6 +2,9 @@ class Agent():
     def __init__(self, env, config):
         pass
 
+    def reset(self, state):
+        raise NotImplementedError
+
     def act(self, state):
         raise NotImplementedError
 

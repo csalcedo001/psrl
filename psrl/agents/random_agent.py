@@ -6,6 +6,9 @@ class RandomAgent(Agent):
         
         self.env = env
         self.config = config
+    
+    def reset(self, state):
+        pass
 
     def act(self, state):
         return self.env.action_space.sample()
