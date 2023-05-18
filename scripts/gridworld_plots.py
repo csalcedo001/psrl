@@ -194,6 +194,8 @@ if r_hat is not None:
         y = env.rows - i - 1
 
         ax.add_patch(plt.Rectangle((x, y), 1, 1, color=cmap.to_rgba(r[state])))
+    
+    fig.colorbar(cmap, ax=ax)
         
     file_path = os.path.join(root, 'reward_heatmap.png')
     plt.savefig(file_path)
