@@ -95,7 +95,12 @@ class PSRLAgent(Agent):
 
 
         ### Solve for optimal policy
-        self.pi, _ = solve_tabular_mdp(p, r, self.config.gamma, self.config.max_iter)
+        self.pi, _ = solve_tabular_mdp(
+            p,
+            r,
+            gamma=self.config.gamma,
+            max_iter=self.config.max_iter
+        )
     
     def save(self, path):
         data = {

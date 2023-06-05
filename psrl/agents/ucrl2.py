@@ -1,4 +1,3 @@
-import itertools
 import numpy as np
 
 from .agent import Agent
@@ -6,7 +5,6 @@ from .utils import extended_value_iteration
 
 
 import numpy as np
-import random as rd
 import copy as cp
 
 
@@ -74,29 +72,33 @@ class UCRL2Agent(Agent):
 	# The Extend Value Iteration algorithm (approximated with precision epsilon), in parallel policy updated with the greedy one.
 	def EVI(self, r_estimate, p_estimate, epsilon = 0.01, max_iter = 1000):
 		action_noise = [(np.random.random_sample() * 0.1 * min((1e-6, epsilon))) for _ in range(self.nA)]
+
 		u0 = self.u#np.zeros(self.nS)   #sligthly boost the computation and doesn't seems to change the results
 		u1 = np.zeros(self.nS)
-		sorted_indices = np.arange(self.nS)
-		niter = 0
+		niter = 1
 		while True:
-			niter += 1
+			sorted_indices = np.argsort(u0)
 			for s in range(self.nS):
 				for a in range(self.nA):
 					max_p = self.max_proba(p_estimate, sorted_indices, s, a)
+
 					temp = min((1, r_estimate[s, a] + self.r_distances[s, a])) + sum([u * p for (u, p) in zip(u0, max_p)])
 					if (a == 0) or ((temp + action_noise[a]) > (u1[s] + action_noise[self.policy[s]])):#(temp > u1[s]):
 						u1[s] = temp
 						self.policy[s] = a
-			diff  = [abs(x - y) for (x, y) in zip(u1, u0)]
+			
+			diff = [abs(x - y) for (x, y) in zip(u1, u0)]
 			if (max(diff) - min(diff)) < epsilon:
 				break
-			else:
-				u0 = u1
-				u1 = np.zeros(self.nS)
-				sorted_indices = np.argsort(u0)
+
+			u0 = u1
+			u1 = np.zeros(self.nS)
+
 			if niter > max_iter:
-				print("No convergence in EVI")
 				break
+
+			niter += 1
+		
 		self.u = u0
 
 	# To start a new episode (init var, computes estmates and run EVI).
@@ -112,7 +114,9 @@ class UCRL2Agent(Agent):
 				for next_s in range(self.nS):
 					p_estimate[s, a, next_s] = self.Pk[s, a, next_s] / div
 		self.distances()
-		self.EVI(r_estimate, p_estimate)
+		self.policy, (_, q, _, _) = extended_value_iteration(p_estimate, r_estimate, 1000, self.p_distances, self.r_distances)
+		self.v = q[np.arange(self.nS), self.policy]
+		# self.EVI(r_estimate, p_estimate)
 
 	# To reinitialize the learner with a given initial state inistate.
 	def reset(self,inistate):
@@ -279,33 +283,37 @@ class KLUCRLAgent(UCRL2Agent):
 	# The Extend Value Iteration algorithm (approximated with precision epsilon), in parallel policy updated with the greedy one.
 	# In KL-UCRL MaxKL used instead of max_proba (see Filippi et al. 2011).
 	def EVI(self, r_estimate, p_estimate, epsilon = 0.1):
-		u0 = np.zeros(self.nS)
-		u1 = np.zeros(self.nS)
 		tau = 10**(-6)
 		maxiter = 1000
-		niter = 0
+
+		u0 = np.zeros(self.nS)
+		u1 = np.zeros(self.nS)
+		niter = 1
 		while True:
 			for s in range(self.nS):
-				test0 = (False in [tau > u for u in u0]) # Test u0 != [0,..., 0]
+				test0 = not np.all(u0 > 0) # Test u0 != [0,..., 0]
 				for a in range(self.nA):
 					if not test0: # MaxKL cannot run with V = [0, 0,..., 0, 0] because function f undifined in this case.
 						max_p = p_estimate[s, a]
 					else:
 						max_p = self.MaxKL(p_estimate, u0, s, a)
+					
 					temp = r_estimate[s, a] + self.r_distances[s, a] + sum([u * p for (u, p) in zip(u0, max_p)])
 					if (a == 0) or (temp > u1[s]):
 						u1[s] = temp
 						self.policy[s] = a
+			
 			diff  = [x - y for (x, y) in zip(u1, u0)]
 			if (max(diff) - min(diff)) < epsilon:
 				break
-			else:
-				u0 = u1
-				u1 = np.zeros(self.nS)
+		
+			u0 = u1
+			u1 = np.zeros(self.nS)
+
 			if niter > maxiter:
 				break
-			else:
-				niter += 1
+
+			niter += 1
 
 
 

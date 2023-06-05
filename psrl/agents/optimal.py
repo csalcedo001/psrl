@@ -9,7 +9,12 @@ class OptimalAgent(Agent):
         self.config = config
 
         self.p, self.r = env.get_p_and_r()
-        self.pi, _ = solve_tabular_mdp(self.p, self.r, config.gamma, config.max_iter)
+        self.pi, _ = solve_tabular_mdp(
+            self.p,
+            self.r,
+            gamma=config.gamma,
+            max_iter=config.max_iter
+        )
 
     def reset(self, staet):
         pass

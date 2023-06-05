@@ -1,6 +1,8 @@
 import os
 import imageio
 import numpy as np
+import torch
+import torch.distributions as dist
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
@@ -165,10 +167,21 @@ plt.savefig(file_path)
 
 ### Plot heatmap
 if isinstance(agent, UCRL2Agent):
-    # r_hat = agent.total_rewards / np.clip(agent.total_visitations, 1, None)
-    r_hat = agent.Rk
+    r_hat = agent.Rk / np.clip(agent.Nk, 1, None)
 elif isinstance(agent, PSRLAgent):
-    r_hat = np.array(agent.r_total) / np.clip(np.array(agent.p_count).sum(axis=2), 1, None)
+    samples = 10
+
+    mu0, lambd, alpha, beta = torch.moveaxis(agent.r_dist, 2, 0)
+
+    r_hats = []
+    for _ in range(samples):
+        tau = dist.Gamma(alpha, 1. / beta).sample()
+        mu = dist.Normal(mu0, 1. / torch.sqrt(lambd * tau)).sample()
+        r_hat = mu
+
+        r_hats.append(r_hat)
+
+    r_hat = torch.stack(r_hats).mean(dim=0).numpy()
 else:
     r_hat = None
 
