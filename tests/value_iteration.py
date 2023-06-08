@@ -1,9 +1,38 @@
 import unittest
 import numpy as np
+from dotmap import DotMap
 
-from psrl.agents.utils import inner_maximization
+from psrl import agents
+from psrl.agents import UCRL2Agent
+from psrl.envs import RiverSwimEnv
+from psrl.config import get_agent_config, get_env_config
 
 from .testcase import TestCase
+
+
+def inner_maximization(p_sa, cb_p_sa, p_s_order):
+    return agents.utils.inner_maximization(p_sa, cb_p_sa, p_s_order)
+
+# def inner_maximization(p_sa, cb_p_sa, p_s_order):
+#     env_config = get_env_config('riverswim')
+#     env_config.n = p_sa.shape[0]
+#     env = RiverSwimEnv(env_config)
+
+#     agent_config = get_agent_config('ucrl2')
+#     agent = UCRL2Agent(env, agent_config)
+
+#     n_s = env.observation_space.n
+#     n_a = env.action_space.n
+
+#     p = np.zeros((n_a, n_a, n_s))
+#     p[0, 0] = p_sa
+
+#     agent.p_distances = np.zeros((n_a, n_a))
+#     agent.p_distances[0, 0] = cb_p_sa
+
+#     p_s_order = p_s_order[::-1]
+
+#     return agent.max_proba(p, p_s_order, 0, 0)
 
 
 class TestInnerMaximization(TestCase):
