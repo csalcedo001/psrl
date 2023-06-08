@@ -5,7 +5,7 @@ def solve_tabular_mdp(p, r, max_iter=1000, gamma=1):
 
 
 def value_iteration(p, r, max_iter=1000, gamma=1):
-    pi, (_, q, _, _) = extended_value_iteration(p, r, max_iter, 0, 0, gamma)
+    pi, (_, q, _, _) = extended_value_iteration(p, r, max_iter=max_iter, gamma=gamma)
 
     return pi, q
 
@@ -20,7 +20,9 @@ def extended_value_iteration(p, r, max_iter=1000, cb_p=None, cb_r=None, gamma=1,
     if len(r.shape) == 3:
         r = r.sum(axis=2)
     
-    r_tilde = r + cb_r
+    r_tilde = r
+    if not is_value_iteration:
+        r_tilde += cb_r
     r_tilde = np.clip(r_tilde, None, 1) # TODO: Understand why this is necessary
 
     for i in range(int(max_iter)):
