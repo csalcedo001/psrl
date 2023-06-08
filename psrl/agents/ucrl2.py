@@ -1,11 +1,8 @@
 import numpy as np
+import copy as cp
 
 from .agent import Agent
 from .utils import extended_value_iteration
-
-
-import numpy as np
-import copy as cp
 
 
 class UCRL2Agent(Agent):
@@ -67,22 +64,25 @@ class UCRL2Agent(Agent):
 			while sum(max_p) > 1:
 				max_p[sorted_indices[l]] = max([0, 1 - sum(max_p) + max_p[sorted_indices[l]]])# Error?
 				l += 1
+
 		return max_p
 	
 	# The Extend Value Iteration algorithm (approximated with precision epsilon), in parallel policy updated with the greedy one.
 	def EVI(self, r_estimate, p_estimate, epsilon = 0.01, max_iter = 1000):
 		action_noise = [(np.random.random_sample() * 0.1 * min((1e-6, epsilon))) for _ in range(self.nA)]
+		# action_noise = np.zeros_like(action_noise)
 
-		u0 = self.u#np.zeros(self.nS)   #sligthly boost the computation and doesn't seems to change the results
+		u0 = self.u # np.zeros(self.nS)   #sligthly boost the computation and doesn't seems to change the results
 		u1 = np.zeros(self.nS)
-		niter = 1
+		niter = 0
 		while True:
 			sorted_indices = np.argsort(u0)
 			for s in range(self.nS):
 				for a in range(self.nA):
 					max_p = self.max_proba(p_estimate, sorted_indices, s, a)
 
-					temp = min((1, r_estimate[s, a] + self.r_distances[s, a])) + sum([u * p for (u, p) in zip(u0, max_p)])
+					r_tilde = min((1, r_estimate[s, a] + self.r_distances[s, a]))
+					temp = r_tilde + sum([u * p for (u, p) in zip(u0, max_p)])
 					if (a == 0) or ((temp + action_noise[a]) > (u1[s] + action_noise[self.policy[s]])):#(temp > u1[s]):
 						u1[s] = temp
 						self.policy[s] = a
@@ -114,9 +114,7 @@ class UCRL2Agent(Agent):
 				for next_s in range(self.nS):
 					p_estimate[s, a, next_s] = self.Pk[s, a, next_s] / div
 		self.distances()
-		self.policy, (_, q, _, _) = extended_value_iteration(p_estimate, r_estimate, 1000, self.p_distances, self.r_distances)
-		self.v = q[np.arange(self.nS), self.policy]
-		# self.EVI(r_estimate, p_estimate)
+		self.policy, (self.u, _, _, _) = extended_value_iteration(p_estimate, r_estimate, 1000, self.p_distances, self.r_distances)
 
 	# To reinitialize the learner with a given initial state inistate.
 	def reset(self,inistate):
@@ -288,10 +286,10 @@ class KLUCRLAgent(UCRL2Agent):
 
 		u0 = np.zeros(self.nS)
 		u1 = np.zeros(self.nS)
-		niter = 1
+		niter = 0
 		while True:
 			for s in range(self.nS):
-				test0 = not np.all(u0 > 0) # Test u0 != [0,..., 0]
+				test0 = np.any(u0 >= tau) # Test u0 != [0,..., 0]
 				for a in range(self.nA):
 					if not test0: # MaxKL cannot run with V = [0, 0,..., 0, 0] because function f undifined in this case.
 						max_p = p_estimate[s, a]
