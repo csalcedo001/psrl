@@ -23,7 +23,12 @@ class PSRLAgent(Agent):
 
         # Initialize posterior distributions
         self.p_dist = config.kappa * torch.ones((n_s, n_a, n_s))
-        self.r_dist = torch.tile(torch.Tensor([mu, lambd, alpha, beta]), (n_s, n_a, 1))
+        self.r_dist = (
+            torch.ones((n_s, n_a)) * mu,
+            torch.ones((n_s, n_a)) * lambd,
+            torch.ones((n_s, n_a)) * alpha,
+            torch.ones((n_s, n_a)) * beta,
+        )
 
         self.pi = None
         self.p_count = np.zeros((n_s, n_a, n_s)).tolist()
@@ -65,7 +70,7 @@ class PSRLAgent(Agent):
         self.p_dist += p_count
 
         # Update reward function
-        mu0, lambd, alpha, beta = torch.moveaxis(self.r_dist, 2, 0)
+        mu0, lambd, alpha, beta = self.r_dist
 
         r_count = p_count.sum(axis=2)
         mu = (lambd * mu0 + r_total) / (lambd + r_count)
@@ -73,7 +78,7 @@ class PSRLAgent(Agent):
         alpha += r_count / 2.
         beta += (r_total ** 2. + lambd * mu0 ** 2. - lambd * mu ** 2.) / 2
 
-        self.r_dist = torch.stack([mu, lambd, alpha, beta], dim=2)
+        self.r_dist = (mu, lambd, alpha, beta)
         
         
         if self.steps % self.config.tau == 0:
@@ -86,7 +91,7 @@ class PSRLAgent(Agent):
         p = dist.Dirichlet(self.p_dist).sample()
 
         # Compute reward function
-        mu0, lambd, alpha, beta = torch.moveaxis(self.r_dist, 2, 0)
+        mu0, lambd, alpha, beta = self.r_dist
 
         tau = dist.Gamma(alpha, 1. / beta).sample()
         mu = dist.Normal(mu0, 1. / torch.sqrt(lambd * tau)).sample()
