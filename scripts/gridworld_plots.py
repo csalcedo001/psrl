@@ -6,7 +6,7 @@ import torch.distributions as dist
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-from psrl.agents import PSRLAgent, UCRL2Agent
+from psrl.agents import PSRLAgent, UCRL2Agent, KLUCRLAgent
 from psrl.train import train
 from psrl.rollout import rollout_episode
 from psrl.utils import env_name_map, agent_name_map
@@ -59,9 +59,10 @@ if config.data_dir:
     weights_path = os.path.join(config.data_dir, 'weights.pkl')
     agent.load(weights_path)
 else:
-    train(env, agent, config)
+    train_trajectory = train(env, agent, config)
 
-trajectory = rollout_episode(env, agent, max_steps=120, render=config.render, verbose=True)
+rollout_trajectory = rollout_episode(env, agent, max_steps=120, render=config.render, verbose=True)
+trajectory = rollout_trajectory
 
 states = [t[0] for t in trajectory]
 states += [trajectory[-1][3]]
@@ -156,6 +157,7 @@ vectors = np.array(vectors).T
 
 
 fig, ax = plt.subplots()
+plt.title('Policy')
 init_plt_grid(ax, env)
 
 plt.quiver(*origins, *vectors, color='#000000', scale=1, scale_units='xy', angles='xy')
@@ -165,29 +167,44 @@ plt.savefig(file_path)
 
 
 
-### Plot heatmap
-if isinstance(agent, UCRL2Agent):
-    r_hat = agent.Rk / np.clip(agent.Nk, 1, None)
+### Get p and r estimates
+if isinstance(agent, UCRL2Agent) or isinstance(agent, KLUCRLAgent):
+    p_hat = agent.Pk / np.clip(agent.Pk.sum(axis=2, keepdims=True), 1, None) + np.expand_dims(agent.p_distances, axis=2)
+    r_hat = agent.Rk / np.clip(agent.Nk, 1, None) + agent.r_distances
+    v = agent.u
 elif isinstance(agent, PSRLAgent):
-    samples = 10
+    samples = 100
 
-    mu0, lambd, alpha, beta = torch.moveaxis(agent.r_dist, 2, 0)
 
+    p_dist = agent.p_dist
+    mu0, lambd, alpha, beta = agent.r_dist
+
+    p_hats = []
     r_hats = []
     for _ in range(samples):
+        p_hat = dist.Dirichlet(p_dist).sample()
+
         tau = dist.Gamma(alpha, 1. / beta).sample()
         mu = dist.Normal(mu0, 1. / torch.sqrt(lambd * tau)).sample()
         r_hat = mu
 
+        p_hats.append(p_hat)
         r_hats.append(r_hat)
 
+    p_hat = torch.stack(p_hats).mean(dim=0).numpy()
     r_hat = torch.stack(r_hats).mean(dim=0).numpy()
+
+    v = None
 else:
+    p_hat = None
     r_hat = None
+    v = None
+    r_emp = None
 
 
 
 if r_hat is not None:
+    ### Plot heatmap
     r = r_hat.sum(axis=1)
     r_min = r.min()
     r_max = r.max()
@@ -198,6 +215,7 @@ if r_hat is not None:
     cmap = mpl.cm.ScalarMappable(norm=norm, cmap=cmap)
 
     fig, ax = plt.subplots()
+    plt.title('Expected reward heatmap')
     init_plt_grid(ax, env)
     
     for state in range(env.observation_space.n):
@@ -212,3 +230,89 @@ if r_hat is not None:
         
     file_path = os.path.join(root, 'reward_heatmap.png')
     plt.savefig(file_path)
+
+
+if v is not None:
+    ### Plot value function
+    v_min = v.min()
+    v_max = v.max()
+
+    cmap = mpl.colormaps['plasma']
+    norm = mpl.colors.Normalize(vmin=v_min, vmax=v_max)
+    cmap = mpl.cm.ScalarMappable(norm=norm, cmap=cmap)
+
+    fig, ax = plt.subplots()
+    plt.title('Value heatmap')
+    init_plt_grid(ax, env)
+    
+    for state in range(env.observation_space.n):
+        i, j = state_to_pos[state]
+            
+        x = j
+        y = env.rows - i - 1
+
+        ax.add_patch(plt.Rectangle((x, y), 1, 1, color=cmap.to_rgba(v[state])))
+    
+    fig.colorbar(cmap, ax=ax)
+        
+    file_path = os.path.join(root, 'value_heatmap.png')
+    plt.savefig(file_path)
+
+
+
+
+
+train_coords = [state_to_pos[t[0]] for t in train_trajectory]
+train_coords += [state_to_pos[train_trajectory[-1][3]]]
+train_coords = np.array(train_coords)
+
+
+k = 10
+
+distances = np.abs(train_coords[k:] - train_coords[:-k]).sum(axis=1)
+
+fig = plt.figure()
+plt.title(f'Distance between states k={k} timesteps apart')
+plt.plot(np.arange(len(distances)), distances, color='r', label=f'k={k}')
+plt.legend()
+        
+file_path = os.path.join(root, 'state_distance.png')
+plt.savefig(file_path)
+
+plt.close()
+
+
+
+
+### Plot empirical count of visited states
+train_states = [t[0] for t in train_trajectory]
+train_states += [train_trajectory[-1][3]]
+state_count = [0] * len(train_states)
+for state in train_states:
+    state_count[state] += 1
+state_count = np.array(state_count)
+
+sc_min = state_count.min()
+sc_max = state_count.max()
+
+
+cmap = mpl.colormaps['plasma']
+norm = mpl.colors.Normalize(vmin=sc_min, vmax=sc_max)
+cmap = mpl.cm.ScalarMappable(norm=norm, cmap=cmap)
+
+fig, ax = plt.subplots()
+plt.title('Empirical reward heatmap')
+init_plt_grid(ax, env)
+
+for state in range(env.observation_space.n):
+    i, j = state_to_pos[state]
+        
+    x = j
+    y = env.rows - i - 1
+
+    ax.add_patch(plt.Rectangle((x, y), 1, 1, color=cmap.to_rgba(state_count[state])))
+
+fig.colorbar(cmap, ax=ax)
+    
+file_path = os.path.join(root, 'emp_count_heatmap.png')
+plt.savefig(file_path)
