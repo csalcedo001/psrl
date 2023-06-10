@@ -28,7 +28,7 @@ class GridworldEnv(Env):
         next_state = self._get_state_from_pos(next_pos)
         reward = self.reward_grid[next_pos[0], next_pos[1]]
         # reward = 6 - np.linalg.norm(self.goal_states[0] - self.pos)
-        done = self.state_id[next_pos[0], next_pos[1]] == 0
+        done = next_state in self.goal_states
 
         return next_state, reward, done, {}
 
@@ -58,9 +58,9 @@ class GridworldEnv(Env):
                 pos = np.array([i, j])
                 state = self._get_state_from_pos(pos)
 
-                if state <= 0:
+                if state in self.goal_states:
                     continue
-
+                
                 for action in range(self.action_space.n):
                     next_pos = self._get_next_pos(action, pos)
                     next_state = self._get_state_from_pos(next_pos)
@@ -93,8 +93,9 @@ class GridworldEnv(Env):
 
         self.start_states = []
         self.goal_states = []
+        goal_positions = []
 
-        num_states = 1
+        num_states = 0
         for i in range(grid_shape[0]):
             for j in range(grid_shape[1]):
                 cell = grid[i][j]
@@ -108,9 +109,7 @@ class GridworldEnv(Env):
 
                 # Terminal states
                 if cell == 'T':
-                    self.state_id[i, j] = 0     # Convention: 0 -> terminal state
-                    self.reward_grid[i, j] = 1
-                    self.goal_states.append(pos_id)
+                    goal_positions.append(pos)
 
                     continue
 
@@ -119,6 +118,8 @@ class GridworldEnv(Env):
 
                 if cell == 'S':
                     self.start_states.append(np.array(pos))
+                elif cell == 'R':
+                    self.reward_grid[i, j] = 1
                 elif cell == '.':
                     self.reward_grid[i, j] = -1
                 elif cell == ' ':
@@ -128,7 +129,14 @@ class GridworldEnv(Env):
 
                 num_states += 1
                 
-        num_states += 1 - len(self.goal_states)
+        for goal_pos in goal_positions:
+            i, j = goal_pos
+            self.state_id[i, j] = num_states
+            self.reward_grid[i, j] = 1
+            self.goal_states.append(num_states)
+        
+        if len(self.goal_states) > 0:
+            num_states += 1
         
         self.action_space = spaces.Discrete(4)
         self.observation_space = spaces.Discrete(num_states)
