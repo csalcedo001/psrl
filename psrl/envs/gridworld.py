@@ -14,10 +14,12 @@ class GridworldEnv(Env):
 
         self._setup_from_grid(config.grid)
 
+        self.is_episodic = config.is_episodic
+
         self.reset()
     
     def reset(self):
-        self.pos = self.start_states[np.random.randint(0, len(self.start_states))]
+        self.pos = self._sample_start_pos()
 
         return self._get_state_from_pos(self.pos)
 
@@ -27,8 +29,7 @@ class GridworldEnv(Env):
 
         next_state = self._get_state_from_pos(next_pos)
         reward = self.reward_grid[next_pos[0], next_pos[1]]
-        # reward = 6 - np.linalg.norm(self.goal_states[0] - self.pos)
-        done = next_state in self.goal_states
+        done = self.is_episodic and next_state in self.goal_states
 
         return next_state, reward, done, {}
 
@@ -64,6 +65,10 @@ class GridworldEnv(Env):
                 for action in range(self.action_space.n):
                     next_pos = self._get_next_pos(action, pos)
                     next_state = self._get_state_from_pos(next_pos)
+
+                    if not self.is_episodic and next_state in self.goal_states:
+                        next_pos = self._sample_start_pos()
+                        next_state = self._get_state_from_pos(next_pos)
 
                     p[state, action, next_state] = 1
                     r[state, action, next_state] = self.reward_grid[next_pos[0], next_pos[1]]
@@ -140,6 +145,9 @@ class GridworldEnv(Env):
         
         self.action_space = spaces.Discrete(4)
         self.observation_space = spaces.Discrete(num_states)
+
+    def _sample_start_pos(self):
+        return self.start_states[np.random.randint(0, len(self.start_states))]
     
     def _get_state_from_pos(self, pos):
         state_id = int(self.state_id[pos[0], pos[1]])
@@ -176,7 +184,7 @@ class TwoRoomGridworldEnv(GridworldEnv):
 
         grid = get_grid_from_file(gridworld_path)
 
-        config = DotMap({'grid': grid})
+        config.grid = grid
 
         GridworldEnv.__init__(self, config)
 
@@ -187,6 +195,6 @@ class FourRoomGridworldEnv(GridworldEnv):
 
         grid = get_grid_from_file(gridworld_path)
 
-        config = DotMap({'grid': grid})
+        config.grid = grid
 
         GridworldEnv.__init__(self, config)

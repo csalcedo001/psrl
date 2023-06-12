@@ -10,7 +10,7 @@ from psrl.agents import PSRLAgent, UCRL2Agent, KLUCRLAgent
 from psrl.train import train
 from psrl.rollout import rollout_episode
 from psrl.utils import env_name_map, agent_name_map
-from psrl.config import save_config
+from psrl.config import save_config, get_env_config, get_agent_config
 
 from arg_utils import get_parser, get_config
 from utils import choose_gridworld_color
@@ -48,12 +48,14 @@ save_config(config.toDict(), config.experiment_dir)
 
 
 # Get environment
+env_config = get_env_config(config.env)
 env_class = env_name_map[config.env]
-env = env_class(config.env_config)
+env = env_class(env_config)
 
 # Get agent
+agent_config = get_agent_config(config.agent)
 agent_class = agent_name_map[config.agent]
-agent = agent_class(env, config.agent_config)
+agent = agent_class(env, agent_config)
 
 if config.data_dir:
     weights_path = os.path.join(config.data_dir, 'weights.pkl')
