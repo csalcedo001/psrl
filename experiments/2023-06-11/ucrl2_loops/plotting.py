@@ -146,6 +146,46 @@ def save_state_value_heatmap_plot(env, state_to_pos, v, filename, path='./', tit
     plt.savefig(file_path)
 
 
+def save_action_value_heatmap_plot(env, state_to_pos, q, filename, path='./', title=None):
+    print("Processing state value function heatmap plot...")
+
+    action_name_map = ['up', 'right', 'down', 'left']
+
+
+    fig, axes = plt.subplots(2, 2)
+    plt.title(title)
+
+    for row in range(2):
+        for col in range(2):
+            ax = axes[row, col]
+
+            action = row * 2 + col
+
+            v = q[:, action]
+
+            v_min = v.min()
+            v_max = v.max()
+
+            cmap = mpl.colormaps['plasma']
+            norm = mpl.colors.Normalize(vmin=v_min, vmax=v_max)
+            cmap = mpl.cm.ScalarMappable(norm=norm, cmap=cmap)
+            ax.title.set_title('Action value for action={}'.format(action_name_map[action]))
+            init_plt_grid(ax, env)
+            
+            for state in range(env.observation_space.n):
+                i, j = state_to_pos[state]
+                    
+                x = j
+                y = env.rows - i - 1
+
+                ax.add_patch(plt.Rectangle((x, y), 1, 1, color=cmap.to_rgba(v[state])))
+            
+            ax.colorbar(cmap, ax=ax)
+                
+            file_path = os.path.join(path, filename + '.png')
+            plt.savefig(file_path)
+
+
 def save_empirical_state_visitation_heatmap_plot(env, state_to_pos, state_count, filename, path='./', title=None):
     print("Processing empirical state visitation plot...")
 
