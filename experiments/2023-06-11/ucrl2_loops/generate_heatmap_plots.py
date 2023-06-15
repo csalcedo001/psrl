@@ -11,6 +11,7 @@ from ucrl2 import UCRL2Agent
 from plotting import (
     save_expected_reward_heatmap_plot,
     save_state_value_heatmap_plot,
+    save_action_value_heatmap_plot,
     save_empirical_state_visitation_heatmap_plot,
     save_reward_count_heatmap_plot,
 )
@@ -23,6 +24,7 @@ save_path = 'checkpoints'
 plot_path = 'plots'
 
 expected_reward_path = os.path.join(plot_path, 'expected_reward')
+action_value_path = os.path.join(plot_path, 'action_value')
 state_value_path = os.path.join(plot_path, 'state_value')
 empirical_state_visitation_path = os.path.join(plot_path, 'empirical_state_visitation')
 reward_count_path = os.path.join(plot_path, 'reward_count')
@@ -48,6 +50,7 @@ for i in range(env.rows):
 
 os.makedirs(plot_path, exist_ok=True)
 os.makedirs(expected_reward_path, exist_ok=True)
+os.makedirs(action_value_path, exist_ok=True)
 os.makedirs(state_value_path, exist_ok=True)
 os.makedirs(empirical_state_visitation_path, exist_ok=True)
 os.makedirs(reward_count_path, exist_ok=True)
@@ -65,6 +68,7 @@ for step in tqdm(range(train_debug_iter)):
     p_count = agent.Pk
     r_count = agent.Rk
     v = agent.u
+    q = agent.q
 
     state_visitation = np.sum(agent.Nk + agent.vk, axis=1)
 
@@ -77,6 +81,14 @@ for step in tqdm(range(train_debug_iter)):
         'expected_reward_' + str(step).zfill(4),
         title=f'Expected Reward at episode {step}',
         path=expected_reward_path,
+    )
+    save_action_value_heatmap_plot(
+        env,
+        state_to_pos,
+        q,
+        'action_value_' + str(step).zfill(4),
+        title=f'Action Value at episode {step}',
+        path=action_value_path,
     )
     save_state_value_heatmap_plot(
         env,
