@@ -58,6 +58,7 @@ for step in tqdm(range(exp_config.train_debug_episodes)):
 
     checkpoint_path = os.path.join(exp_config.save_path, 'checkpoint_{}.pkl'.format(str(step).zfill(4)))
     agent.load(checkpoint_path)
+    agent.new_episode()
 
 
     p_hat = agent.Pk / np.clip(agent.Pk.sum(axis=2, keepdims=True), 1, None) + np.expand_dims(agent.p_distances, axis=2)

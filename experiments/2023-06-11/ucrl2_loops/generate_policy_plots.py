@@ -41,6 +41,7 @@ for step in tqdm(range(exp_config.train_debug_episodes)):
 
     checkpoint_path = os.path.join(exp_config.save_path, 'checkpoint_{}.pkl'.format(str(step).zfill(4)))
     agent.load(checkpoint_path)
+    agent.new_episode()
 
     print('Saving policy plot for episode', step)
     save_policy_plot(env, agent, state_to_pos, 'policy_' + str(step).zfill(4), title=f'Policy at episode {step}', path=policy_path)
