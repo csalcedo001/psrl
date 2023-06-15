@@ -66,10 +66,6 @@ class GridworldEnv(Env):
                     next_pos = self._get_next_pos(action, pos)
                     next_state = self._get_state_from_pos(next_pos)
 
-                    if not self.is_episodic and next_state in self.goal_states:
-                        next_pos = self._sample_start_pos()
-                        next_state = self._get_state_from_pos(next_pos)
-
                     p[state, action, next_state] = 1
                     r[state, action, next_state] = self.reward_grid[next_pos[0], next_pos[1]]
 
@@ -168,6 +164,11 @@ class GridworldEnv(Env):
 
         next_pos = self.pos.copy() if pos is None else pos.copy()
         next_pos[axis] += 1 if direction == 0 else -1
+
+
+        next_state = self._get_state_from_pos(next_pos)
+        if not self.is_episodic and next_state in self.goal_states:
+            next_pos = self._sample_start_pos()
 
         is_outside_grid = np.any(np.minimum(np.maximum(next_pos, 0), np.array([self.rows, self.cols]) - 1) != next_pos)
         is_touching_wall = not is_outside_grid and self.state_id[next_pos[0], next_pos[1]] == -1
