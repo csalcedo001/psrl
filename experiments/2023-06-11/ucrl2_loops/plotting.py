@@ -116,6 +116,7 @@ def save_expected_reward_heatmap_plot(env, state_to_pos, r_hat, filename, path='
         
     file_path = os.path.join(path, filename + '.png')
     plt.savefig(file_path)
+    plt.close(fig)
 
 
 def save_action_value_heatmap_plot(env, state_to_pos, q, filename, path='./', title=None):

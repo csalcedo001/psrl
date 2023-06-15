@@ -1,0 +1,4 @@
+train_episodes: 1000
+train_debug_episodes: 100
+save_path: 'checkpoints'
+plot_path: 'plots'
