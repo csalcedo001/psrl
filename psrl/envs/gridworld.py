@@ -24,11 +24,11 @@ class GridworldEnv(Env):
         return self._get_state_from_pos(self.pos)
 
     def step(self, action):
-        next_pos = self._get_next_pos(action)
+        next_pos, raw_next_pos = self._get_next_pos(action)
         self.pos = next_pos
 
         next_state = self._get_state_from_pos(next_pos)
-        reward = self.reward_grid[next_pos[0], next_pos[1]]
+        reward = self.reward_grid[raw_next_pos[0], raw_next_pos[1]]
         done = self.is_episodic and next_state in self.goal_states
 
         return next_state, reward, done, {}
@@ -63,11 +63,11 @@ class GridworldEnv(Env):
                     continue
                 
                 for action in range(self.action_space.n):
-                    next_pos = self._get_next_pos(action, pos)
+                    next_pos, raw_next_pos = self._get_next_pos(action, pos)
                     next_state = self._get_state_from_pos(next_pos)
 
                     p[state, action, next_state] = 1
-                    r[state, action, next_state] = self.reward_grid[next_pos[0], next_pos[1]]
+                    r[state, action, next_state] = self.reward_grid[raw_next_pos[0], raw_next_pos[1]]
 
         return p, r
     
@@ -166,16 +166,18 @@ class GridworldEnv(Env):
         next_pos[axis] += 1 if direction == 0 else -1
 
 
-        next_state = self._get_state_from_pos(next_pos)
-        if not self.is_episodic and next_state in self.goal_states:
-            next_pos = self._sample_start_pos()
 
         is_outside_grid = np.any(np.minimum(np.maximum(next_pos, 0), np.array([self.rows, self.cols]) - 1) != next_pos)
         is_touching_wall = not is_outside_grid and self.state_id[next_pos[0], next_pos[1]] == -1
         if is_outside_grid or is_touching_wall:
             next_pos = self.pos.copy()
+        
+        raw_next_pos = next_pos[:]
+        next_state = self._get_state_from_pos(next_pos)
+        if not self.is_episodic and next_state in self.goal_states:
+            next_pos = self._sample_start_pos()
 
-        return next_pos
+        return next_pos, raw_next_pos
 
 
 
