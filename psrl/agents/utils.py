@@ -3,6 +3,36 @@ import numpy as np
 def solve_tabular_mdp(p, r, max_iter=1000, gamma=1):
     return value_iteration(p, r, max_iter, gamma)
 
+def policy_evaluation(p, r, pi, max_iter=1000, gamma=1, epsilon=1e-2):
+    n_s, n_a = r.shape[:2]
+
+    if pi.shape != (n_s, n_a):
+        new_pi = np.zeros((n_s, n_a))
+        new_pi[np.arange(n_s), pi] = 1
+        pi = new_pi
+
+    v = np.zeros(n_s)
+
+    if len(r.shape) == 3:
+        r = r.mean(axis=2)
+
+
+    for i in range(int(max_iter)):
+        q = r + np.einsum('ijk, k -> ij', p, gamma * v)
+        v_ = np.einsum('ij, ij -> i', pi, q)
+
+        dists = np.abs(v_ - v)
+        diff = dists.max() - dists.min()
+        
+        # Check if value function is epsilon-optimal
+        if diff < epsilon:
+            break
+
+        v = v_
+
+    return v
+
+
 
 def value_iteration(p, r, max_iter=1000, gamma=1):
     pi, (_, q, _, _) = extended_value_iteration(p, r, max_iter=max_iter, gamma=gamma)
@@ -18,12 +48,13 @@ def extended_value_iteration(p, r, max_iter=1000, cb_p=None, cb_r=None, gamma=1,
     pi = np.zeros(n_s, dtype=int)
 
     if len(r.shape) == 3:
-        r = r.sum(axis=2)
+        r = r.mean(axis=2)
     
     r_tilde = r
     if not is_value_iteration:
         r_tilde += cb_r
-    r_tilde = np.clip(r_tilde, None, 1) # TODO: Understand why this is necessary
+    # r_tilde = np.clip(r_tilde, None, 1) # TODO: Understand why this is necessary
+    
 
     for i in range(int(max_iter)):
         # Compute p tilde
