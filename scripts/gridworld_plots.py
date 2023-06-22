@@ -7,6 +7,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 from psrl.agents import PSRLAgent, UCRL2Agent, KLUCRLAgent
+from psrl.agents.utils import policy_evaluation
 from psrl.train import train
 from psrl.rollout import rollout_episode
 from psrl.utils import env_name_map, agent_name_map
@@ -338,19 +339,52 @@ plt.savefig(file_path)
 
 
 
-### Plot empirical count of visited states
-print("Processing empirical total reward plot...")
+if r_count is not None and p_count is not None:
+    ### Plot empirical count of visited states
+    print("Processing empirical total reward plot...")
 
-r_emp = r_count.sum(axis=1) / np.clip(p_count.sum(axis=(1, 2)), 1, None)
-r_min = r_emp.min()
-r_max = r_emp.max()
+    r_emp = r_count.sum(axis=1) / np.clip(p_count.sum(axis=(1, 2)), 1, None)
+    r_min = r_emp.min()
+    r_max = r_emp.max()
+
+    cmap = mpl.colormaps['plasma']
+    norm = mpl.colors.Normalize(vmin=r_min, vmax=r_max)
+    cmap = mpl.cm.ScalarMappable(norm=norm, cmap=cmap)
+
+    fig, ax = plt.subplots()
+    plt.title('Empirical total reward heatmap')
+    init_plt_grid(ax, env)
+
+    for state in range(env.observation_space.n):
+        i, j = state_to_pos[state]
+            
+        x = j
+        y = env.rows - i - 1
+
+        ax.add_patch(plt.Rectangle((x, y), 1, 1, color=cmap.to_rgba(r_emp[state])))
+
+    fig.colorbar(cmap, ax=ax)
+
+    file_path = os.path.join(root, 'emp_total_reward_heatmap.png')
+    plt.savefig(file_path)
+
+
+p, r = env.get_p_and_r()
+
+# Get value function via policy evaluation
+v_eval = policy_evaluation(p, r, agent.pi, gamma=0.99, epsilon=1e-6, max_iter=1000)
+
+print("Processing policy evaluation state value function heatmap plot...")
+### Plot value function
+v_min = v_eval.min()
+v_max = v_eval.max()
 
 cmap = mpl.colormaps['plasma']
-norm = mpl.colors.Normalize(vmin=r_min, vmax=r_max)
+norm = mpl.colors.Normalize(vmin=v_min, vmax=v_max)
 cmap = mpl.cm.ScalarMappable(norm=norm, cmap=cmap)
 
 fig, ax = plt.subplots()
-plt.title('Empirical total reward heatmap')
+plt.title('Policy evaluation state value function heatmap')
 init_plt_grid(ax, env)
 
 for state in range(env.observation_space.n):
@@ -359,9 +393,11 @@ for state in range(env.observation_space.n):
     x = j
     y = env.rows - i - 1
 
-    ax.add_patch(plt.Rectangle((x, y), 1, 1, color=cmap.to_rgba(r_emp[state])))
+    ax.add_patch(plt.Rectangle((x, y), 1, 1, color=cmap.to_rgba(v_eval[state])))
 
 fig.colorbar(cmap, ax=ax)
 
-file_path = os.path.join(root, 'emp_total_reward_heatmap.png')
+file_path = os.path.join(root, 'pe_state_value_heatmap.png')
 plt.savefig(file_path)
+
+plt.close(fig)
