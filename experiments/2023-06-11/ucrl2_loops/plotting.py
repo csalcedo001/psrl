@@ -226,10 +226,10 @@ def save_empirical_state_visitation_heatmap_plot(env, state_to_pos, state_count,
     plt.close(fig)
 
 
-def save_reward_count_heatmap_plot(env, state_to_pos, r_count, p_count, filename, path='./', title=None):
+def save_reward_count_heatmap_plot(env, state_to_pos, r_count, filename, path='./', title=None):
     print("Processing empirical total reward plot...")
 
-    r_emp = r_count.sum(axis=1) / np.clip(p_count.sum(axis=(1, 2)), 1, None)
+    r_emp = r_count.sum(axis=1)
     r_min = r_emp.min()
     r_max = r_emp.max()
 

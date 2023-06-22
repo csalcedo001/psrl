@@ -108,7 +108,6 @@ for step in tqdm(range(exp_config.train_debug_episodes)):
         env,
         state_to_pos,
         r_count,
-        p_count,
         'reward_count_' + str(step).zfill(4),
         title=f'Empirical reward Count at episode {step}',
         path=reward_count_path,
