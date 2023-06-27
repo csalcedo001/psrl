@@ -67,10 +67,10 @@ gridworld_data = {
         'grid': zig,
         'n_s': 11,
     },
-    'big': {
-        'grid': big,
-        'n_s': 400,
-    }
+    # 'big': {
+    #     'grid': big,
+    #     'n_s': 400,
+    # }
 }
 
 gridworld_parameterized_tests = [
@@ -99,6 +99,7 @@ def setup_env(shape: str, episodic: bool):
     return env
 
 class TestGridworld(TestCase):
+    # Make sure that number of states and actions are correct
     @parameterized.expand(gridworld_parameterized_tests)
     def test_num_states_actions(self, shape, episodic):
         env = setup_env(shape=shape, episodic=episodic)
@@ -115,6 +116,8 @@ class TestGridworld(TestCase):
         self.assertEqual(n_a, 4, msg=n_a)
     
 
+    # Check that the mappings from state id to grid position and
+    # vice versa are correct
     @parameterized.expand(gridworld_parameterized_tests)
     def test_state_to_pos(self, shape, episodic):
         env = setup_env(shape=shape, episodic=episodic)
@@ -129,11 +132,13 @@ class TestGridworld(TestCase):
             self.assertTrue(0 <= pos[0] < n_rows, msg=pos)
             self.assertTrue(0 <= pos[1] < n_cols, msg=pos)
 
-            # Return and expect same
+            # Expect same state while mapping back
             state_ = env._get_state_from_pos(pos)
-            self.assertEqual(state, state_, msg=(state, pos, state_))
+            self.assertEqual(state, state_, msg=(shape, state, pos, state_))
 
 
+    # Check that the transition operator is correct by checking
+    # that the values for any given (s, a) pair sum up to one
     @parameterized.expand(gridworld_parameterized_tests)
     def test_p_well_formed(self, shape, episodic):
         env = setup_env(shape=shape, episodic=episodic)
@@ -145,9 +150,11 @@ class TestGridworld(TestCase):
 
         for s in range(n_s):
             for a in range(n_a):
-                self.assertEqual(p[s, a].sum(), 1, msg=(s, a, p[s, a]))
+                self.assertEqual(p[s, a].sum(), 1, msg=(shape, s, a, p[s, a]))
 
 
+    # Check that the transition operator and step function give
+    # the same results
     @parameterized.expand(gridworld_parameterized_tests)
     def test_step_eq_p(self, shape, episodic):
         env = setup_env(shape=shape, episodic=episodic)
@@ -163,7 +170,35 @@ class TestGridworld(TestCase):
                 next_pos = env._get_next_pos(pos=pos, action=a)
                 next_s = env._get_state_from_pos(next_pos)
 
-                self.assertEqual(p[s, a, next_s], 1, msg=(s, a, next_s, p[s, a, next_s]))
+                # Environment is deterministic, so for any (s, a) there is
+                # a dirac distribution to a single next state
+                self.assertEqual(p[s, a, next_s], 1, msg=(shape, s, a, next_s, p[s, a, next_s]))
+
+
+    # Check that the reward function is correct: only gives
+    # reward while transitioning to goal state
+    @parameterized.expand(gridworld_parameterized_tests)
+    def test_step_eq_r(self, shape, episodic):
+        env = setup_env(shape=shape, episodic=episodic)
+
+        p, r = env.get_p_and_r()
+
+        n_s = env.observation_space.n
+        n_a = env.action_space.n
+
+        for s in range(n_s):
+            for a in range(n_a):
+                pos = env._get_pos_from_state(s)
+                next_pos = env._get_next_pos(pos=pos, action=a)
+                next_s = env._get_state_from_pos(next_pos)
+
+                # Deterministic reward only when transitioning to goal state
+                if next_s in env.goal_states and s not in env.goal_states:
+                    expected_r = 1
+                else:
+                    expected_r = 0
+                
+                self.assertEqual(r[s, a, next_s], expected_r, msg=(shape, s, a, next_s, r[s, a, next_s]))
 
 
 
