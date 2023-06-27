@@ -13,6 +13,7 @@ from testcase import TestCase
 import utils
 
 
+
 def count_in_grid(grid, items):
     count = 0
     for row in grid:
@@ -46,16 +47,25 @@ def get_gridworld_data(raw_gridworld_data):
 # Gridworld test maps
 
 
+simple = [
+    ['S', 'G'],
+]
 
 square = [
-    [' ', ' '],
-    [' ', ' '],
+    ['S', ' '],
+    [' ', 'G'],
 ]
 
 two_goals = [
     [' ', ' ', 'G'],
     ['S', ' ', ' '],
     [' ', ' ', 'G'],
+]
+
+no_goal = [
+    [' ', ' ', ' '],
+    ['S', ' ', ' '],
+    [' ', ' ', ' '],
 ]
 
 two_starts = [
@@ -71,11 +81,11 @@ middle_wall = [
 ]
 
 zig = [
-    [' ', ' ', ' '],
+    ['S', ' ', ' '],
     ['#', '#', ' '],
     [' ', ' ', ' '],
     [' ', '#', '#'],
-    [' ', ' ', ' '],
+    [' ', ' ', 'G'],
 ]
 
 big = [[' '] * 20 for _ in range(20)]
@@ -83,8 +93,10 @@ big = [[' '] * 20 for _ in range(20)]
 
 # Mapping from names to grids
 shape_to_grid = {
+    'simple': simple,
     'square': square,
     'two_goals': two_goals,
+    'no_goal': no_goal,
     'two_starts': two_starts,
     'middle_wall': middle_wall,
     'zig': zig,
@@ -105,15 +117,13 @@ def setup_env(shape: str, episodic: bool):
     if shape not in gridworld_data:
         raise ValueError('Invalid shape: {}'.format(shape))
     
-    # Set up grid
-    grid = gridworld_data[shape]['grid']
-    grid[0][0] = 'S'
-    if episodic:
-        grid[-1][-1] = 'G'
-
     # Setup environment
+    grid = gridworld_data[shape]['grid']
+
     env_config = get_env_config('gridworld')
     env_config.grid = grid
+    env_config.episodic = episodic
+
     env = GridworldEnv(env_config)
 
     return env
@@ -144,8 +154,8 @@ class TestGridworld(TestCase):
         env = setup_env(shape=shape, episodic=episodic)
 
         n_s = env.observation_space.n
-        n_rows = len(env.grid)
-        n_cols = len(env.grid[0])
+        n_rows = gridworld_data[shape]['n_rows']
+        n_cols = gridworld_data[shape]['n_cols']
 
         for state in range(n_s):
             pos = env._get_pos_from_state(state)
@@ -175,12 +185,12 @@ class TestGridworld(TestCase):
 
 
     # Check that the transition operator and step function give
-    # the same results
+    # consistent results
     @parameterized.expand(gridworld_parameterized_tests)
-    def test_step_eq_p(self, shape, episodic):
+    def test_step_as_p(self, shape, episodic):
         env = setup_env(shape=shape, episodic=episodic)
 
-        p, r = env.get_p_and_r()
+        p, _ = env.get_p_and_r()
 
         n_s = env.observation_space.n
         n_a = env.action_space.n
@@ -188,21 +198,45 @@ class TestGridworld(TestCase):
         for s in range(n_s):
             for a in range(n_a):
                 pos = env._get_pos_from_state(s)
-                next_pos = env._get_next_pos(pos=pos, action=a)
-                next_s = env._get_state_from_pos(next_pos)
+                env.pos = pos
+                next_s, _, _, _ = env.step(a)
 
-                # Environment is deterministic, so for any (s, a) there is
-                # a dirac distribution to a single next state
-                self.assertEqual(p[s, a, next_s], 1, msg=(shape, s, a, next_s, p[s, a, next_s]))
+                if not episodic:
+                    # Transitions are deterministic, so for any (s, a) there is
+                    # a dirac distribution to a single next state
+                    self.assertEqual(p[s, a, next_s], 1.0, msg=(shape, s, a, next_s, p[s, a, next_s]))
+                else:
+                    self.assertTrue(p[s, a, next_s] > 0.0, msg=(shape, s, a, next_s, p[s, a, next_s]))
+
+
+    # Check that the reward function and step function give
+    # the same reward (reward is deterministic)
+    @parameterized.expand(gridworld_parameterized_tests)
+    def test_step_as_r(self, shape, episodic):
+        env = setup_env(shape=shape, episodic=episodic)
+
+        _, r = env.get_p_and_r()
+
+        n_s = env.observation_space.n
+        n_a = env.action_space.n
+
+        for s in range(n_s):
+            for a in range(n_a):
+                pos = env._get_pos_from_state(s)
+                env.pos = pos
+                _, reward, _, _ = env.step(a)
+
+                self.assertEqual(r[s, a], reward, msg=(shape, s, a, r[s, a], reward))
+
 
 
     # Check that the reward function is correct: only gives
     # reward while transitioning to goal state
     @parameterized.expand(gridworld_parameterized_tests)
-    def test_step_eq_r(self, shape, episodic):
+    def test_r_value(self, shape, episodic):
         env = setup_env(shape=shape, episodic=episodic)
 
-        p, r = env.get_p_and_r()
+        _, r = env.get_p_and_r()
 
         n_s = env.observation_space.n
         n_a = env.action_space.n
@@ -210,16 +244,23 @@ class TestGridworld(TestCase):
         for s in range(n_s):
             for a in range(n_a):
                 pos = env._get_pos_from_state(s)
-                next_pos = env._get_next_pos(pos=pos, action=a)
+                next_pos = env._get_next_pos(pos, a)
                 next_s = env._get_state_from_pos(next_pos)
 
                 # Deterministic reward only when transitioning to goal state
-                if next_s in env.goal_states and s not in env.goal_states:
-                    expected_r = 1
-                else:
-                    expected_r = 0
+                if not episodic:
+                    cell_value = gridworld_data[shape]['grid'][next_pos[0]][next_pos[1]]
+                    if next_s in env.goal_states or cell_value == 'R':
+                        expected_r = 1
+                    elif cell_value == '.':
+                        expected_r = -1
+                    else:
+                        expected_r = 0
                 
-                self.assertEqual(r[s, a, next_s], expected_r, msg=(shape, s, a, next_s, r[s, a, next_s]))
+                    self.assertEqual(r[s, a], expected_r, msg=(shape, s, a, next_s, r[s, a]))
+                else:
+                    # TODO: check that reward for non episodic case is correct
+                    pass
 
 
 
