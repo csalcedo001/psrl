@@ -13,6 +13,40 @@ from testcase import TestCase
 import utils
 
 
+def count_in_grid(grid, items):
+    count = 0
+    for row in grid:
+        for item in row:
+            if item in items:
+                count += 1
+    return count
+
+def get_gridworld_data(raw_gridworld_data):
+    gridworld_data = {}
+    for shape, grid in raw_gridworld_data.items():
+        n_rows = len(grid)
+        n_cols = len(grid[0])
+        n_walls = count_in_grid(grid, ['#'])
+
+        shape_data = {
+            'grid': grid,
+            'n_rows': n_rows,
+            'n_cols': n_cols,
+            'n_walls': n_walls,
+            'n_s': n_rows * n_cols - n_walls,
+            'n_starts': count_in_grid(grid, ['S']),
+            'n_goals': count_in_grid(grid, ['G']),
+        }
+
+        gridworld_data[shape] = shape_data
+    
+    return gridworld_data
+
+
+# Gridworld test maps
+
+
+
 square = [
     [' ', ' '],
     [' ', ' '],
@@ -46,33 +80,19 @@ zig = [
 
 big = [[' '] * 20 for _ in range(20)]
 
-gridworld_data = {
-    'square': {
-        'grid': square,
-        'n_s': 4,
-    },
-    'two_goals': {
-        'grid': two_goals,
-        'n_s': 9,
-    },
-    'two_starts': {
-        'grid': two_starts,
-        'n_s': 9,
-    },
-    'middle_wall': {
-        'grid': middle_wall,
-        'n_s': 8,
-    },
-    'zig': {
-        'grid': zig,
-        'n_s': 11,
-    },
-    # 'big': {
-    #     'grid': big,
-    #     'n_s': 400,
-    # }
+
+# Mapping from names to grids
+shape_to_grid = {
+    'square': square,
+    'two_goals': two_goals,
+    'two_starts': two_starts,
+    'middle_wall': middle_wall,
+    'zig': zig,
+    'big': big
 }
 
+# Fill up data and make parameterized test cases
+gridworld_data = get_gridworld_data(shape_to_grid)
 gridworld_parameterized_tests = [
     (shape, episodic)
     for episodic in [True, False]
@@ -80,7 +100,7 @@ gridworld_parameterized_tests = [
 ]
 
 
-
+# Set environment according to parameterized test
 def setup_env(shape: str, episodic: bool):
     if shape not in gridworld_data:
         raise ValueError('Invalid shape: {}'.format(shape))
@@ -97,6 +117,7 @@ def setup_env(shape: str, episodic: bool):
     env = GridworldEnv(env_config)
 
     return env
+
 
 class TestGridworld(TestCase):
     # Make sure that number of states and actions are correct
