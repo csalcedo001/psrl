@@ -20,12 +20,6 @@ from utils import load_experiment_config
 # Get experiment configuration
 exp_config = load_experiment_config('exp_config.yaml')
 
-expected_reward_path = os.path.join(exp_config.plot_path, 'expected_reward')
-action_value_path = os.path.join(exp_config.plot_path, 'action_value')
-state_value_path = os.path.join(exp_config.plot_path, 'state_value')
-empirical_state_visitation_path = os.path.join(exp_config.plot_path, 'empirical_state_visitation')
-reward_count_path = os.path.join(exp_config.plot_path, 'reward_count')
-
 
 env_config = get_env_config('tworoom')
 env = TwoRoomGridworldEnv(env_config)
@@ -37,13 +31,12 @@ agent = UCRL2Agent(env, agent_config)
 
 
 
-state_to_pos = {}
-for i in range(env.rows):
-    for j in range(env.cols):
-        state_to_pos[env.state_id[i, j]] = [i, j]
-
-
-
+# Create paths for plots
+expected_reward_path = os.path.join(exp_config.plot_path, 'expected_reward')
+action_value_path = os.path.join(exp_config.plot_path, 'action_value')
+state_value_path = os.path.join(exp_config.plot_path, 'state_value')
+empirical_state_visitation_path = os.path.join(exp_config.plot_path, 'empirical_state_visitation')
+reward_count_path = os.path.join(exp_config.plot_path, 'reward_count')
 
 os.makedirs(exp_config.plot_path, exist_ok=True)
 os.makedirs(expected_reward_path, exist_ok=True)
@@ -74,7 +67,6 @@ for step in tqdm(range(exp_config.train_debug_episodes)):
 
     save_expected_reward_heatmap_plot(
         env,
-        state_to_pos,
         r_hat,
         'expected_reward_' + str(step).zfill(4),
         title=f'Expected Reward at episode {step}',
@@ -82,7 +74,6 @@ for step in tqdm(range(exp_config.train_debug_episodes)):
     )
     save_action_value_heatmap_plot(
         env,
-        state_to_pos,
         q,
         'action_value_' + str(step).zfill(4),
         title=f'Action Value at episode {step}',
@@ -90,7 +81,6 @@ for step in tqdm(range(exp_config.train_debug_episodes)):
     )
     save_state_value_heatmap_plot(
         env,
-        state_to_pos,
         v,
         'state_value_' + str(step).zfill(4),
         title=f'State Value at episode {step}',
@@ -98,7 +88,6 @@ for step in tqdm(range(exp_config.train_debug_episodes)):
     )
     save_empirical_state_visitation_heatmap_plot(
         env,
-        state_to_pos,
         state_visitation,
         'empirical_state_visitation_' + str(step).zfill(4),
         title=f'Empirical State Visitation at episode {step}',
@@ -106,7 +95,6 @@ for step in tqdm(range(exp_config.train_debug_episodes)):
     )
     save_reward_count_heatmap_plot(
         env,
-        state_to_pos,
         r_count,
         'reward_count_' + str(step).zfill(4),
         title=f'Empirical reward Count at episode {step}',

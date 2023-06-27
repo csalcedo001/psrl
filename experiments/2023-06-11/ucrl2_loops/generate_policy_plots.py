@@ -26,13 +26,6 @@ agent = UCRL2Agent(env, agent_config)
 
 
 
-state_to_pos = {}
-for i in range(env.rows):
-    for j in range(env.cols):
-        state_to_pos[env.state_id[i, j]] = [i, j]
-
-
-
 
 os.makedirs(policy_path, exist_ok=True)
 
@@ -44,4 +37,4 @@ for step in tqdm(range(exp_config.train_debug_episodes)):
     agent.new_episode()
 
     print('Saving policy plot for episode', step)
-    save_policy_plot(env, agent, state_to_pos, 'policy_' + str(step).zfill(4), title=f'Policy at episode {step}', path=policy_path)
+    save_policy_plot(env, agent, 'policy_' + str(step).zfill(4), title=f'Policy at episode {step}', path=policy_path)

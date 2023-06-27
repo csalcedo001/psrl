@@ -39,7 +39,7 @@ def init_plt_grid(ax, env):
             ax.add_patch(plt.Rectangle((x, y), 1, 1, color=color))
 
 
-def save_policy_plot(env, agent, state_to_pos, filename, path='/.', title=None):
+def save_policy_plot(env, agent, filename, path='/.', title=None):
     origins = []
     vectors = []
     for state in range(env.observation_space.n):
@@ -55,7 +55,7 @@ def save_policy_plot(env, agent, state_to_pos, filename, path='/.', title=None):
             direction = 1 - direction
 
 
-        pos = np.array(state_to_pos[state])
+        pos = np.array(env._get_pos_from_state(state))
 
         next_pos = pos.copy()
         next_pos[axis] += 1 if direction == 0 else -1
@@ -88,7 +88,7 @@ def save_policy_plot(env, agent, state_to_pos, filename, path='/.', title=None):
     plt.close(fig)
 
 
-def save_expected_reward_heatmap_plot(env, state_to_pos, r_hat, filename, path='./', title=None):
+def save_expected_reward_heatmap_plot(env, r_hat, filename, path='./', title=None):
     print("Processing expected reward heatmap plot...")
 
     r = r_hat.sum(axis=1)
@@ -105,7 +105,7 @@ def save_expected_reward_heatmap_plot(env, state_to_pos, r_hat, filename, path='
     init_plt_grid(ax, env)
     
     for state in range(env.observation_space.n):
-        i, j = state_to_pos[state]
+        i, j = env._get_pos_from_state(state)
             
         x = j
         y = env.rows - i - 1
@@ -119,8 +119,8 @@ def save_expected_reward_heatmap_plot(env, state_to_pos, r_hat, filename, path='
     plt.close(fig)
 
 
-def save_action_value_heatmap_plot(env, state_to_pos, q, filename, path='./', title=None):
-    print("Processing state value function heatmap plot...")
+def save_action_value_heatmap_plot(env, q, filename, path='./', title=None):
+    print("Processing action value function heatmap plot...")
 
     q_min = q.min()
     q_max = q.max()
@@ -148,7 +148,7 @@ def save_action_value_heatmap_plot(env, state_to_pos, q, filename, path='./', ti
     
     for state in range(env.observation_space.n):
         for action in range(env.action_space.n):
-            i, j = state_to_pos[state]
+            i, j = env._get_pos_from_state(state)
                 
             x = j
             y = env.rows - i - 1
@@ -167,7 +167,7 @@ def save_action_value_heatmap_plot(env, state_to_pos, q, filename, path='./', ti
     plt.close(fig)
 
 
-def save_state_value_heatmap_plot(env, state_to_pos, v, filename, path='./', title=None):
+def save_state_value_heatmap_plot(env, v, filename, path='./', title=None):
     print("Processing state value function heatmap plot...")
 
     v_min = v.min()
@@ -182,7 +182,7 @@ def save_state_value_heatmap_plot(env, state_to_pos, v, filename, path='./', tit
     init_plt_grid(ax, env)
     
     for state in range(env.observation_space.n):
-        i, j = state_to_pos[state]
+        i, j = env._get_pos_from_state(state)
             
         x = j
         y = env.rows - i - 1
@@ -196,7 +196,7 @@ def save_state_value_heatmap_plot(env, state_to_pos, v, filename, path='./', tit
     plt.close(fig)
 
 
-def save_empirical_state_visitation_heatmap_plot(env, state_to_pos, state_count, filename, path='./', title=None):
+def save_empirical_state_visitation_heatmap_plot(env, state_count, filename, path='./', title=None):
     print("Processing empirical state visitation plot...")
 
     sc_min = state_count.min()
@@ -212,7 +212,7 @@ def save_empirical_state_visitation_heatmap_plot(env, state_to_pos, state_count,
     init_plt_grid(ax, env)
 
     for state in range(env.observation_space.n):
-        i, j = state_to_pos[state]
+        i, j = env._get_pos_from_state(state)
             
         x = j
         y = env.rows - i - 1
@@ -226,7 +226,7 @@ def save_empirical_state_visitation_heatmap_plot(env, state_to_pos, state_count,
     plt.close(fig)
 
 
-def save_reward_count_heatmap_plot(env, state_to_pos, r_count, filename, path='./', title=None):
+def save_reward_count_heatmap_plot(env, r_count, filename, path='./', title=None):
     print("Processing empirical total reward plot...")
 
     r_emp = r_count.sum(axis=1)
@@ -242,7 +242,7 @@ def save_reward_count_heatmap_plot(env, state_to_pos, r_count, filename, path='.
     init_plt_grid(ax, env)
 
     for state in range(env.observation_space.n):
-        i, j = state_to_pos[state]
+        i, j = env._get_pos_from_state(state)
             
         x = j
         y = env.rows - i - 1

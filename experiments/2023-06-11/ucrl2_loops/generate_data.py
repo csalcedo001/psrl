@@ -25,12 +25,6 @@ agent = UCRL2Agent(env, agent_config)
 
 
 
-state_to_pos = {}
-for i in range(env.rows):
-    for j in range(env.cols):
-        state_to_pos[env.state_id[i, j]] = [i, j]
-
-
 for step in tqdm(range(exp_config.train_episodes)):
     train_episode(env, agent)
 
