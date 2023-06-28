@@ -84,14 +84,18 @@ class TestGridworld(TestCase):
             for a in range(n_a):
                 pos = env._get_pos_from_state(s)
                 env.pos = pos
+
+                attempted_next_pos = env._attempt_next_pos(pos, a)
+                attempted_next_s = env._get_state_from_pos(attempted_next_pos)
+
                 next_s, _, _, _ = env.step(a)
 
-                if not episodic:
-                    # Transitions are deterministic, so for any (s, a) there is
-                    # a dirac distribution to a single next state
-                    self.assertEqual(p[s, a, next_s], 1.0, msg=(shape, s, a, next_s, p[s, a, next_s]))
+                if attempted_next_s in env.goal_states and s not in env.goal_states:
+                    expected_prob = 1.0 / len(env.start_states)
                 else:
-                    self.assertTrue(p[s, a, next_s] > 0.0, msg=(shape, s, a, next_s, p[s, a, next_s]))
+                    expected_prob = 1.0
+                
+                self.assertEqual(p[s, a, next_s], expected_prob, msg=(shape, s, a, next_s, p[s, a, next_s]))
 
 
     # Check that the reward function and step function give
@@ -129,23 +133,21 @@ class TestGridworld(TestCase):
         for s in range(n_s):
             for a in range(n_a):
                 pos = env._get_pos_from_state(s)
+                attempted_next_pos = env._attempt_next_pos(pos, a)
+                attempted_next_s = env._get_state_from_pos(attempted_next_pos)
                 next_pos = env._get_next_pos(pos, a)
                 next_s = env._get_state_from_pos(next_pos)
 
                 # Deterministic reward only when transitioning to goal state
-                if not episodic:
-                    cell_value = gridworld_data[shape]['grid'][next_pos[0]][next_pos[1]]
-                    if next_s in env.goal_states or cell_value == 'R':
-                        expected_r = 1
-                    elif cell_value == '.':
-                        expected_r = -1
-                    else:
-                        expected_r = 0
-                
-                    self.assertEqual(r[s, a], expected_r, msg=(shape, s, a, next_s, r[s, a]))
+                cell_value = gridworld_data[shape]['grid'][next_pos[0]][next_pos[1]]
+                if attempted_next_s in env.goal_states or cell_value == 'R':
+                    expected_r = 1
+                elif cell_value == '.':
+                    expected_r = -1
                 else:
-                    # TODO: check that reward for non episodic case is correct
-                    pass
+                    expected_r = 0
+            
+                self.assertEqual(r[s, a], expected_r, msg=(shape, s, a, next_s, r[s, a]))
 
 
 
