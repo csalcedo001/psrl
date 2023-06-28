@@ -1,13 +1,36 @@
+''' Test extended value iteration and related functions
+
+This script serves to purpose of testing whether extended value iteration
+(EVI) is working correctly. It does so by testing each of its individual
+components independently to make sure they are working correctly from the
+bottom up to the main function. The script can be categorized in the
+following parts:
+
+1.  Test the inner maximization function:
+    Computes the optimistic MDP on EVI, so it is called frequently.
+
+2.  Test the value iteration function:
+    A special case of EVI, value iteration uses EVI on the background
+    to compute the value function.
+
+3.  Test the extended value iteration function as a whole.
+'''
+
+
+
 import unittest
+from parameterized import parameterized
 import numpy as np
 from dotmap import DotMap
+import gym
 
 from psrl import agents
 from psrl.agents import UCRL2Agent
-from psrl.envs import RiverSwimEnv
-from psrl.config import get_agent_config, get_env_config
+from psrl.envs import GridworldEnv, TwoRoomGridworldEnv
+from psrl.config import get_env_config
 
-from .testcase import TestCase
+from testcase import TestCase
+from value_iteration_utils import brute_force_value_iteration
 
 
 def inner_maximization(p_sa, cb_p_sa, p_s_order):
@@ -119,6 +142,69 @@ class TestInnerMaximization(TestCase):
         true_p_sa_hat[-1] = 1 - p_sa[1]
 
         self.assertNumpyEqual(p_sa_hat, true_p_sa_hat)
+
+
+
+
+class TestValueIteration(TestCase):
+    epsilon = 1e-3      # Threshold of absolute maximum difference
+    gamma = 1.0         # Discount factor (1 = no discount)
+    max_iter = 1000     # Maximum number of iterations
+
+    # All these policies are optimal for the gridworld described below
+    @parameterized.expand([
+        (np.array([             # Always goes right
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 1, 0, 0],
+            [1, 0, 0, 0]
+        ]),),
+        (np.array([             # Toss a fair coin to go right or down
+            [0, 0.5, 0.5, 0],
+            [0,   0,   1, 0],
+            [0,   1,   0, 0],
+            [0,   0,   0, 1]
+        ]),),
+        (np.array([             # Biased towards going down
+            [0, 0.1, 0.9, 0],
+            [0,   0,   1, 0],
+            [0,   1,   0, 0],
+            [0,   0,   1, 0]
+        ]),)
+    ])
+    def test_policy_evaluation(self, pi):
+        env_config = get_env_config('gridworld')
+        env_config.grid = [
+            ['S', ' '],
+            [' ', 'G']
+        ]
+        env = GridworldEnv(env_config)
+
+        p, r = env.get_p_and_r()
+
+        v_hat = agents.utils.policy_evaluation(
+            p,
+            r,
+            pi,
+            gamma=self.gamma,
+            epsilon=self.epsilon,
+            max_iter=self.max_iter
+        )
+
+        v = brute_force_value_iteration(
+            p,
+            r,
+            pi,
+            self.gamma,
+            self.epsilon,
+            self.max_iter
+        )
+        
+        self.assertNumpyEqual(v_hat, v)
+
+
+
+
 
 if __name__ == '__main__':
     unittest.main()
