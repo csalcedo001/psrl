@@ -1,7 +1,12 @@
 import numpy as np
 
-def brute_force_value_iteration(p, r, pi, gamma, epsilon, max_iter):
+def brute_force_policy_evaluation(p, r, pi, gamma, epsilon, max_iter):
     n_s, n_a, _ = p.shape
+
+    if len(pi.shape) == 1:
+        pi_idx = pi
+        pi = np.zeros((n_s, n_a))
+        pi[np.arange(n_s), pi_idx] = 1
 
     # Manually executing policy evaluation
     v = np.zeros(n_s)
@@ -28,6 +33,29 @@ def brute_force_value_iteration(p, r, pi, gamma, epsilon, max_iter):
 
 
 grids_and_policies = {
+    "square": {
+        "grid": [
+            ['S', 'G']
+        ],
+        "optimal_policies": [       # Always goes right
+            np.array([
+                [0, 1, 0, 0],
+                [1, 0, 0, 0],
+            ]),
+            np.array([
+                [0, 1, 0, 0],
+                [0, 1, 0, 0],
+            ]),
+            np.array([
+                [0, 1, 0, 0],
+                [0, 0, 1, 0],
+            ]),
+            np.array([
+                [0, 1, 0, 0],
+                [0, 0, 0, 1],
+            ]),
+        ]
+    },
     "square": {
         "grid": [
             ['S', ' '],

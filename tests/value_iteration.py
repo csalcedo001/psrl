@@ -30,7 +30,7 @@ from psrl.envs import GridworldEnv, TwoRoomGridworldEnv
 from psrl.config import get_env_config
 
 from testcase import TestCase
-from value_iteration_utils import brute_force_value_iteration, grids_and_policies
+from value_iteration_utils import brute_force_policy_evaluation, grids_and_policies
 
 
 def inner_maximization(p_sa, cb_p_sa, p_s_order):
@@ -152,6 +152,11 @@ policy_evaluation_parameters = [
     for pi in grids_and_policies[name]['optimal_policies']
     for gamma in [1.0, 0.9]
 ]
+value_iteration_parameters = [
+    (name, gamma)
+    for name in grids_and_policies
+    for gamma in [1.0, 0.9]
+]
 
 class TestValueIteration(TestCase):
     epsilon = 1e-3      # Threshold of absolute maximum difference
@@ -166,29 +171,54 @@ class TestValueIteration(TestCase):
 
         p, r = env.get_p_and_r()
 
-        v_hat = agents.utils.policy_evaluation(
-            p,
-            r,
-            pi,
-            gamma=gamma,
-            epsilon=self.epsilon,
-            max_iter=self.max_iter
-        )
+        args = {
+            'p': p,
+            'r': r,
+            'pi': pi,
+            'gamma': gamma,
+            'epsilon': self.epsilon,
+            'max_iter': self.max_iter
+        }
 
-        v = brute_force_value_iteration(
-            p,
-            r,
-            pi,
-            gamma,
-            self.epsilon,
-            self.max_iter
-        )
+        v_hat = agents.utils.policy_evaluation(**args)
+        v = brute_force_policy_evaluation(**args)
         
         self.assertNumpyEqual(v_hat, v)
 
     
-    def test_value_iteration(self):
-        pass
+    @parameterized.expand(value_iteration_parameters)
+    def test_value_iteration(self, name, gamma):
+        env_config = get_env_config('gridworld')
+        env_config.grid = grids_and_policies[name]['grid']
+        env = GridworldEnv(env_config)
+
+        p, r = env.get_p_and_r()
+
+        args = {
+            'p': p,
+            'r': r,
+            'gamma': gamma,
+            'epsilon': self.epsilon,
+            'max_iter': self.max_iter
+        }
+
+        # Get some optimal policy and compute its value function
+        pi = grids_and_policies[name]['optimal_policies'][0]
+        v = brute_force_policy_evaluation(pi=pi, **args)
+
+
+        # Make sure the value function returned direction from value iteration
+        # is the same as the one obtained by the optimal policy through
+        # policy evaluation
+        pi_hat, q_hat = agents.utils.value_iteration(**args)
+        v_hat = q_hat.max(axis=1)
+        self.assertNumpyEqual(v_hat, v)
+
+        # Make sure that the policy returned by policy iteration results in
+        # the same value function as the one obtained by policy iteration
+        # on the optimal policy
+        v_hat = brute_force_policy_evaluation(pi=pi_hat, **args)
+        self.assertNumpyEqual(v_hat, v)
 
 
 
