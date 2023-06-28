@@ -30,7 +30,7 @@ from psrl.envs import GridworldEnv, TwoRoomGridworldEnv
 from psrl.config import get_env_config
 
 from testcase import TestCase
-from value_iteration_utils import brute_force_value_iteration
+from value_iteration_utils import brute_force_value_iteration, grids_and_policies
 
 
 def inner_maximization(p_sa, cb_p_sa, p_s_order):
@@ -146,38 +146,22 @@ class TestInnerMaximization(TestCase):
 
 
 
+policy_evaluation_parameters = [
+    (name, pi, gamma)
+    for name in grids_and_policies
+    for pi in grids_and_policies[name]['optimal_policies']
+    for gamma in [1.0, 0.9]
+]
+
 class TestValueIteration(TestCase):
     epsilon = 1e-3      # Threshold of absolute maximum difference
-    gamma = 1.0         # Discount factor (1 = no discount)
     max_iter = 1000     # Maximum number of iterations
 
-    # All these policies are optimal for the gridworld described below
-    @parameterized.expand([
-        (np.array([             # Always goes right
-            [0, 1, 0, 0],
-            [0, 0, 1, 0],
-            [0, 1, 0, 0],
-            [1, 0, 0, 0]
-        ]),),
-        (np.array([             # Toss a fair coin to go right or down
-            [0, 0.5, 0.5, 0],
-            [0,   0,   1, 0],
-            [0,   1,   0, 0],
-            [0,   0,   0, 1]
-        ]),),
-        (np.array([             # Biased towards going down
-            [0, 0.1, 0.9, 0],
-            [0,   0,   1, 0],
-            [0,   1,   0, 0],
-            [0,   0,   1, 0]
-        ]),)
-    ])
-    def test_policy_evaluation(self, pi):
+    
+    @parameterized.expand(policy_evaluation_parameters)
+    def test_policy_evaluation(self, name, pi, gamma):
         env_config = get_env_config('gridworld')
-        env_config.grid = [
-            ['S', ' '],
-            [' ', 'G']
-        ]
+        env_config.grid = grids_and_policies[name]['grid']
         env = GridworldEnv(env_config)
 
         p, r = env.get_p_and_r()
@@ -186,7 +170,7 @@ class TestValueIteration(TestCase):
             p,
             r,
             pi,
-            gamma=self.gamma,
+            gamma=gamma,
             epsilon=self.epsilon,
             max_iter=self.max_iter
         )
@@ -195,12 +179,16 @@ class TestValueIteration(TestCase):
             p,
             r,
             pi,
-            self.gamma,
+            gamma,
             self.epsilon,
             self.max_iter
         )
         
         self.assertNumpyEqual(v_hat, v)
+
+    
+    def test_value_iteration(self):
+        pass
 
 
 

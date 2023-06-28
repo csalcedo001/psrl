@@ -24,3 +24,35 @@ def brute_force_value_iteration(p, r, pi, gamma, epsilon, max_iter):
         v = v_next
     
     return v
+
+
+
+grids_and_policies = {
+    "square": {
+        "grid": [
+            ['S', ' '],
+            [' ', 'G']
+        ],
+        "optimal_policies": [
+            np.array([              # Always goes right
+                [0, 1, 0, 0],
+                [0, 0, 1, 0],
+                [0, 1, 0, 0],
+                [1, 0, 0, 0]
+            ]),
+            np.array([              # Toss a fair coin to go right or down
+                [0, 0.5, 0.5, 0],
+                [0,   0,   1, 0],
+                [0,   1,   0, 0],
+                [0,   0,   0, 1]
+            ]),
+            np.array([              # Biased towards going down
+                [0, 0.1, 0.9, 0],
+                [0,   0,   1, 0],
+                [0,   1,   0, 0],
+                [0,   0,   1, 0]
+            ])
+        ]
+    }
+}
+
