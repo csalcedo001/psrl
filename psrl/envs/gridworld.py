@@ -35,13 +35,18 @@ class GridworldEnv(Env):
 
     def step(self, action):
         pos = self.pos
+        state = self._get_state_from_pos(pos)
+
+        attempted_next_pos = self._attempt_next_pos(self.pos, action)
+        attempted_next_state = self._get_state_from_pos(attempted_next_pos)
+
         next_pos = self._get_next_pos(self.pos, action)
+        next_state = self._get_state_from_pos(next_pos)
+
         self.pos = next_pos
 
-        state = self._get_state_from_pos(pos)
-        next_state = self._get_state_from_pos(next_pos)
         reward = self.r[state, action]
-        done = self.is_episodic and next_state in self.goal_states
+        done = self.is_episodic and attempted_next_state in self.goal_states
 
         return next_state, reward, done, {}
 
@@ -160,17 +165,14 @@ class GridworldEnv(Env):
                 next_pos = self._get_next_pos(pos, action)
 
                 # If state is terminal, stay in place
-                if self.is_episodic and next_pos in self.goal_states:
-                    next_pos = pos
-
                 next_state = self._get_state_from_pos(next_pos)
+                if next_state in self.goal_states:
+                    next_pos = pos
+                    next_state = self._get_state_from_pos(next_pos)
+                
                 attempted_next_state = self._get_state_from_pos(attempted_next_pos)
-
-                if not self.is_episodic:
-                    # The only randomness in this environment is in environment 
-                    # reset, which only happens in the episodic case
-                    p[state, action, next_state] = 1
-                elif attempted_next_state in self.goal_states:
+                
+                if attempted_next_state in self.goal_states and state not in self.goal_states:
                     p[state, action, self.start_states] = 1. / len(self.start_states)
                 else:
                     p[state, action, next_state] = 1
@@ -248,7 +250,7 @@ class GridworldEnv(Env):
         # If the task is episodic and the agent is in a terminal
         # state (which shouldn't occur), for convenience we make
         # the agent not able to scape that state
-        if self.is_episodic and state in self.goal_states:
+        if state in self.goal_states:
             return pos.copy()
 
         next_pos = self._attempt_next_pos(pos, action)
@@ -256,7 +258,7 @@ class GridworldEnv(Env):
         # If the task is continuous and the agent is in a terminal
         # state, then we sample a new start position
         next_state = self._get_state_from_pos(next_pos)
-        if self.is_episodic and next_state in self.goal_states:
+        if next_state in self.goal_states:
             next_pos = self._sample_start_pos()
 
         return next_pos
