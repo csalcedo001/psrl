@@ -77,13 +77,6 @@ states += [trajectory[-1][3]]
 
 
 ### Make video
-
-state_to_pos = {}
-for i in range(env.rows):
-    for j in range(env.cols):
-        state_to_pos[env.state_id[i, j]] = [i, j]
-
-
 root = config.experiment_dir
 frame_filename = f'{root}/frame.png'
 
@@ -95,7 +88,7 @@ frames = []
 for t, state in enumerate(states):
     print(f"Processing frame {t}")
 
-    i, j = state_to_pos[state]
+    i, j = env._get_pos_from_state(state)
         
     x = j
     y = env.rows - i - 1
@@ -142,7 +135,7 @@ for state in range(env.observation_space.n):
         direction = 1 - direction
 
 
-    pos = np.array(state_to_pos[state])
+    pos = np.array(env._get_pos_from_state(state))
 
     next_pos = pos.copy()
     next_pos[axis] += 1 if direction == 0 else -1
@@ -234,7 +227,7 @@ if r_hat is not None:
     init_plt_grid(ax, env)
     
     for state in range(env.observation_space.n):
-        i, j = state_to_pos[state]
+        i, j = env._get_pos_from_state(state)
             
         x = j
         y = env.rows - i - 1
@@ -263,7 +256,7 @@ if v is not None:
     init_plt_grid(ax, env)
     
     for state in range(env.observation_space.n):
-        i, j = state_to_pos[state]
+        i, j = env._get_pos_from_state(state)
             
         x = j
         y = env.rows - i - 1
@@ -282,8 +275,8 @@ if v is not None:
 print("Processing state distance plot...")
 
 ### Plot state distance
-train_coords = [state_to_pos[t[0]] for t in train_trajectory]
-train_coords += [state_to_pos[train_trajectory[-1][3]]]
+train_coords = [env._get_pos_from_state(t[0]) for t in train_trajectory]
+train_coords += [env._get_pos_from_state(train_trajectory[-1][3])]
 train_coords = np.array(train_coords)
 
 
@@ -325,7 +318,7 @@ plt.title('Empirical state count heatmap')
 init_plt_grid(ax, env)
 
 for state in range(env.observation_space.n):
-    i, j = state_to_pos[state]
+    i, j = env._get_pos_from_state(state)
         
     x = j
     y = env.rows - i - 1
@@ -356,7 +349,7 @@ if r_count is not None and p_count is not None:
     init_plt_grid(ax, env)
 
     for state in range(env.observation_space.n):
-        i, j = state_to_pos[state]
+        i, j = env._get_pos_from_state(state)
             
         x = j
         y = env.rows - i - 1
@@ -388,7 +381,7 @@ plt.title('Policy evaluation state value function heatmap')
 init_plt_grid(ax, env)
 
 for state in range(env.observation_space.n):
-    i, j = state_to_pos[state]
+    i, j = env._get_pos_from_state(state)
         
     x = j
     y = env.rows - i - 1
