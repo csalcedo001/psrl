@@ -4,7 +4,7 @@ def solve_tabular_mdp(p, r, max_iter=1000, gamma=1):
     return value_iteration(p, r, max_iter, gamma)
 
 def policy_evaluation(p, r, pi, max_iter=1000, gamma=1, epsilon=1e-2):
-    n_s, n_a = r.shape[:2]
+    n_s, n_a = p.shape[:2]
 
     if pi.shape != (n_s, n_a):
         new_pi = np.zeros((n_s, n_a))
@@ -21,39 +21,51 @@ def policy_evaluation(p, r, pi, max_iter=1000, gamma=1, epsilon=1e-2):
         q = r + np.einsum('ijk, k -> ij', p, gamma * v)
         v_ = np.einsum('ij, ij -> i', pi, q)
 
-        dists = np.abs(v_ - v)
-        diff = dists.max() - dists.min()
+        if gamma < 1:
+            dists = np.abs(v_ - v)
+        elif gamma == 1:
+            # Get average reward value function
+            dists = np.abs(v_ / max(i, 1)  - v / (i + 1))
+        
+        diff = dists.max()
         
         # Check if value function is epsilon-optimal
         if diff < epsilon:
             break
 
         v = v_
+    
+    if gamma == 1:
+        v = v / i
 
     return v
 
 
 
-def value_iteration(p, r, max_iter=1000, gamma=1):
-    pi, (_, q, _, _) = extended_value_iteration(p, r, max_iter=max_iter, gamma=gamma)
+def value_iteration(*args, **kwargs):
+    # Just forward arguments to extended value iteration (by default
+    # no confidence bounds)
+    pi, (_, q, _, _) = extended_value_iteration(*args, **kwargs)
 
     return pi, q
 
-def extended_value_iteration(p, r, max_iter=1000, cb_p=None, cb_r=None, gamma=1, epsilon=1e-2):
+def extended_value_iteration(p, r, cb_p=None, cb_r=None, gamma=1, epsilon=1e-2, max_iter=1000):
     is_value_iteration = cb_p is None or cb_r is None
 
-    n_s, n_a = r.shape[:2]
+    n_s, n_a = p.shape[:2]
 
     v = np.zeros(n_s)
     pi = np.zeros(n_s, dtype=int)
 
     if len(r.shape) == 3:
-        r = r.mean(axis=2)
+        # If the reward depends on the next state, we just do a weighted
+        # average w.r.t. the transition probabilities
+        r = np.sum(r * p, axis=2)
     
     r_tilde = r
     if not is_value_iteration:
         r_tilde += cb_r
-    # r_tilde = np.clip(r_tilde, None, 1) # TODO: Understand why this is necessary
+    # r_tilde = np.clip(r_tilde, None, 1)       # Why would this be necessary?
     
 
     for i in range(int(max_iter)):
@@ -72,8 +84,11 @@ def extended_value_iteration(p, r, max_iter=1000, cb_p=None, cb_r=None, gamma=1,
         q = r_tilde + np.einsum('ijk, k -> ij', p_tilde, gamma * v)
         v_ = np.max(q, axis=1)
 
-        dists = np.abs(v_ - v)
-        diff = dists.max() - dists.min()
+        if gamma < 1:
+            dists = np.abs(v_ - v)
+        elif gamma == 1:
+            dists = np.abs(v_ / max(i, 1)  - v / (i + 1))
+        diff = dists.max()
         
         # Check if value function is epsilon-optimal
         if diff < epsilon:
@@ -81,7 +96,10 @@ def extended_value_iteration(p, r, max_iter=1000, cb_p=None, cb_r=None, gamma=1,
 
         v = v_
 
-    # Get policy from Q function
+    # Get policy from value function
+    if gamma == 1:
+        v = v / i
+    q = r_tilde + np.einsum('ijk, k -> ij', p_tilde, gamma * v)
     pi = np.argmax(q, axis=1)
 
     return pi, (v, q, p_tilde, r_tilde)

@@ -183,11 +183,15 @@ class TestValueIteration(TestCase):
         v_hat = agents.utils.policy_evaluation(**args)
         v = brute_force_policy_evaluation(**args)
         
-        self.assertNumpyEqual(v_hat, v)
+        if gamma == 1:
+            self.assertNumpyEqual(v_hat, v)
+        else:
+            diff = np.abs(v_hat - v).max()
+            self.assertRoundEqual(diff, 0)
 
     
     @parameterized.expand(value_iteration_parameters)
-    def test_value_iteration(self, name, gamma):
+    def test_value_iteration_value_function(self, name, gamma):
         env_config = get_env_config('gridworld')
         env_config.grid = grids_and_policies[name]['grid']
         env = GridworldEnv(env_config)
@@ -202,7 +206,7 @@ class TestValueIteration(TestCase):
             'max_iter': self.max_iter
         }
 
-        # Get some optimal policy and compute its value function
+        # Get an optimal policy and compute its value function
         pi = grids_and_policies[name]['optimal_policies'][0]
         v = brute_force_policy_evaluation(pi=pi, **args)
 
@@ -210,19 +214,50 @@ class TestValueIteration(TestCase):
         # Make sure the value function returned direction from value iteration
         # is the same as the one obtained by the optimal policy through
         # policy evaluation
-        pi_hat, q_hat = agents.utils.value_iteration(**args)
+        _, q_hat = agents.utils.value_iteration(**args)
         v_hat = q_hat.max(axis=1)
-        self.assertNumpyEqual(v_hat, v)
+        if gamma == 1:
+            self.assertNumpyEqual(v_hat, v)
+        else:
+            diff = np.abs(v_hat - v).max()
+            self.assertRoundEqual(diff, 0)
+
+
+    
+    @parameterized.expand(value_iteration_parameters)
+    def test_value_iteration_policy(self, name, gamma):
+        env_config = get_env_config('gridworld')
+        env_config.grid = grids_and_policies[name]['grid']
+        env = GridworldEnv(env_config)
+
+        p, r = env.get_p_and_r()
+
+        args = {
+            'p': p,
+            'r': r,
+            'gamma': gamma,
+            'epsilon': self.epsilon,
+            'max_iter': self.max_iter
+        }
+
+        # Get an optimal policy and compute its value function
+        pi = grids_and_policies[name]['optimal_policies'][0]
+        v = brute_force_policy_evaluation(pi=pi, **args)
+
 
         # Make sure that the policy returned by policy iteration results in
         # the same value function as the one obtained by policy iteration
         # on the optimal policy
+        pi_hat, _ = agents.utils.value_iteration(**args)
         v_hat = brute_force_policy_evaluation(pi=pi_hat, **args)
-        self.assertNumpyEqual(v_hat, v)
-
+        if gamma == 1:
+            self.assertNumpyEqual(v_hat, v)
+        else:
+            diff = np.abs(v_hat - v).max()
+            self.assertRoundEqual(diff, 0)
 
 
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)

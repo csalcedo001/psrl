@@ -10,7 +10,7 @@ def brute_force_policy_evaluation(p, r, pi, gamma, epsilon, max_iter):
 
     # Manually executing policy evaluation
     v = np.zeros(n_s)
-    for _ in range(max_iter):
+    for i in range(max_iter):
         # Initialize to 0
         delta = 0
         v_next = np.zeros(n_s)
@@ -19,7 +19,11 @@ def brute_force_policy_evaluation(p, r, pi, gamma, epsilon, max_iter):
             for a in range(n_a):
                 v_next[s] += pi[s, a] * np.sum([p[s, a, s_] * (r[s, a] + gamma * v[s_]) for s_ in range(n_s)])
             
-            delta = max(delta, abs(v_next[s] - v[s]))
+            if gamma < 1:
+                diff = abs(v_next[s] - v[s])
+            elif gamma == 1:
+                diff = abs(v_next[s] / max(i, 1) - v[s] / (i + 1))
+            delta = max(diff, delta)
         
         # For most cases where gamma = 1 and reward = 1, this stop
         # condition won't go through
@@ -27,6 +31,9 @@ def brute_force_policy_evaluation(p, r, pi, gamma, epsilon, max_iter):
             break
         
         v = v_next
+    
+    if gamma == 1:
+        v = v / i
     
     return v
 
