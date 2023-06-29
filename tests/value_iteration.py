@@ -30,7 +30,12 @@ from psrl.envs import GridworldEnv, TwoRoomGridworldEnv
 from psrl.config import get_env_config
 
 from testcase import TestCase
-from value_iteration_utils import brute_force_policy_evaluation, grids_and_policies
+from value_iteration_utils import (
+    brute_force_policy_evaluation,
+    brute_force_policy_average_reward,
+    brute_force_steady_state_distribution,
+    grids_and_policies
+)
 
 
 def inner_maximization(p_sa, cb_p_sa, p_s_order):
@@ -188,6 +193,38 @@ class TestValueIteration(TestCase):
         else:
             diff = np.abs(v_hat - v).max()
             self.assertRoundEqual(diff, 0)
+
+        
+    @parameterized.expand([(name,) for name in grids_and_policies])
+    def test_steady_state_distribution(self, name):
+        env_config = get_env_config('gridworld')
+        env_config.grid = grids_and_policies[name]['grid']
+        env = GridworldEnv(env_config)
+
+        p, _ = env.get_p_and_r()
+        # TODO: parameterize policy
+        pi = grids_and_policies[name]['optimal_policies'][0]
+
+        mu_pi = brute_force_steady_state_distribution(p, pi)
+        mu_pi_hat = agents.utils.get_steady_state_distribution(p, pi)
+
+        self.assertRoundEqual(mu_pi_hat.sum(), 1)
+        self.assertNumpyEqual(mu_pi_hat, mu_pi)
+
+    @parameterized.expand([(name,) for name in grids_and_policies])
+    def test_policy_average_reward(self, name):
+        env_config = get_env_config('gridworld')
+        env_config.grid = grids_and_policies[name]['grid']
+        env = GridworldEnv(env_config)
+
+        p, r = env.get_p_and_r()
+        # TODO: parameterize policy
+        pi = grids_and_policies[name]['optimal_policies'][0]
+
+        avg_r = brute_force_policy_average_reward(p, r, pi)
+        avg_r_hat = agents.utils.get_policy_average_reward(p, r, pi)
+
+        self.assertNumpyEqual(avg_r_hat, avg_r)
 
     
     @parameterized.expand(value_iteration_parameters)

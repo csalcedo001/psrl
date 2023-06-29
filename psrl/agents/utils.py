@@ -1,9 +1,9 @@
 import numpy as np
 
-def solve_tabular_mdp(p, r, max_iter=1000, gamma=1):
-    return value_iteration(p, r, max_iter, gamma)
+def solve_tabular_mdp(*args, **kwargs):
+    return value_iteration(*args, **kwargs)
 
-def policy_evaluation(p, r, pi, max_iter=1000, gamma=1, epsilon=1e-2):
+def policy_evaluation(p, r, pi, gamma=1, epsilon=1e-2, max_iter=100):
     n_s, n_a = p.shape[:2]
 
     if pi.shape != (n_s, n_a):
@@ -49,7 +49,7 @@ def value_iteration(*args, **kwargs):
 
     return pi, q
 
-def extended_value_iteration(p, r, cb_p=None, cb_r=None, gamma=1, epsilon=1e-2, max_iter=1000):
+def extended_value_iteration(p, r, cb_p=None, cb_r=None, gamma=1, epsilon=1e-2, max_iter=100):
     is_value_iteration = cb_p is None or cb_r is None
 
     n_s, n_a = p.shape[:2]
@@ -140,3 +140,34 @@ def inner_maximization(p_sa_hat, confidence_bound_p_sa, rank):
         last = rank_dup.pop()
     
     return p_sa
+
+
+def get_policy_average_reward(p, r, pi, epsilon=1e-2, max_iter=100):
+    if len(pi.shape) == 1:
+        pi_idx = pi
+        pi = np.zeros((len(pi_idx), len(pi_idx)))
+        pi[np.arange(len(pi_idx)), pi_idx] = 1
+    
+    mu_pi = get_steady_state_distribution(p, pi, epsilon=epsilon, max_iter=max_iter)
+    avg_reward = np.einsum("i,ij,ij", mu_pi, pi, r)
+
+    return avg_reward
+
+
+def get_steady_state_distribution(p, pi, epsilon=1e-2, max_iter=100):
+    n_s, _ = p.shape[:2]
+    mu_pi = np.ones(n_s) / n_s      # Initialize as uniform distribution
+
+    for _ in range(int(max_iter)):
+        next_mu_pi = np.einsum("i,ij,ijk->k", mu_pi, pi, p)
+
+        diff = np.abs(next_mu_pi - mu_pi).max()
+        mu_pi = next_mu_pi
+
+        if diff < epsilon:
+            break
+
+    # Normalize in case sum is not exactly 1
+    mu_pi /= mu_pi.sum()  
+    
+    return mu_pi
