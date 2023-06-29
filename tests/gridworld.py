@@ -85,12 +85,9 @@ class TestGridworld(TestCase):
                 pos = env._get_pos_from_state(s)
                 env.pos = pos
 
-                attempted_next_pos = env._attempt_next_pos(pos, a)
-                attempted_next_s = env._get_state_from_pos(attempted_next_pos)
-
                 next_s, _, _, _ = env.step(a)
 
-                if attempted_next_s in env.goal_states and s not in env.goal_states:
+                if s in env.goal_states:
                     expected_prob = 1.0 / len(env.start_states)
                 else:
                     expected_prob = 1.0
@@ -133,18 +130,16 @@ class TestGridworld(TestCase):
         for s in range(n_s):
             for a in range(n_a):
                 pos = env._get_pos_from_state(s)
-                attempted_next_pos = env._attempt_next_pos(pos, a)
-                attempted_next_s = env._get_state_from_pos(attempted_next_pos)
                 next_pos = env._get_next_pos(pos, a)
                 next_s = env._get_state_from_pos(next_pos)
 
                 # Deterministic reward only when transitioning to goal state
-                cell_value = gridworld_data[shape]['grid'][next_pos[0]][next_pos[1]]
-                if attempted_next_s in env.goal_states and s not in env.goal_states:
+                grid_char = gridworld_data[shape]['grid'][pos[0]][pos[1]]
+                if s in env.goal_states or next_s in env.goal_states:
                     expected_r = 1
-                elif cell_value == 'R':
+                elif grid_char == 'R':
                     expected_r = 1
-                elif cell_value == '.':
+                elif grid_char == '.':
                     expected_r = -1
                 else:
                     expected_r = 0

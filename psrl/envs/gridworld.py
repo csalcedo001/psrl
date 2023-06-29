@@ -37,16 +37,13 @@ class GridworldEnv(Env):
         pos = self.pos
         state = self._get_state_from_pos(pos)
 
-        attempted_next_pos = self._attempt_next_pos(self.pos, action)
-        attempted_next_state = self._get_state_from_pos(attempted_next_pos)
-
         next_pos = self._get_next_pos(self.pos, action)
         next_state = self._get_state_from_pos(next_pos)
 
         self.pos = next_pos
 
         reward = self.r[state, action]
-        done = self.is_episodic and attempted_next_state in self.goal_states
+        done = self.is_episodic and state in self.goal_states
 
         return next_state, reward, done, {}
 
@@ -161,18 +158,12 @@ class GridworldEnv(Env):
             pos = self._get_pos_from_state(state)
             
             for action in range(n_a):
-                attempted_next_pos = self._attempt_next_pos(pos, action)
                 next_pos = self._get_next_pos(pos, action)
 
                 # If state is terminal, stay in place
                 next_state = self._get_state_from_pos(next_pos)
-                if next_state in self.goal_states:
-                    next_pos = pos
-                    next_state = self._get_state_from_pos(next_pos)
                 
-                attempted_next_state = self._get_state_from_pos(attempted_next_pos)
-                
-                if attempted_next_state in self.goal_states and state not in self.goal_states:
+                if state in self.goal_states:
                     p[state, action, self.start_states] = 1. / len(self.start_states)
                 else:
                     p[state, action, next_state] = 1
@@ -181,8 +172,8 @@ class GridworldEnv(Env):
                 # Receive reward only when i) next state is terminal ii) next
                 # state is not terminal but is a reward state iii) next state
                 # is not terminal and but is a penalty state
-                grid_char = self.grid[next_pos[0]][next_pos[1]]
-                if attempted_next_state in self.goal_states and state not in self.goal_states:
+                grid_char = self.grid[pos[0]][pos[1]]
+                if state in self.goal_states or next_state in self.goal_states:
                     r[state, action] = 1
                 elif grid_char == 'R':
                     r[state, action] = 1
@@ -253,15 +244,12 @@ class GridworldEnv(Env):
         # state (which shouldn't occur), for convenience we make
         # the agent not able to scape that state
         if state in self.goal_states:
-            return pos.copy()
-
-        next_pos = self._attempt_next_pos(pos, action)
+            next_pos = self._sample_start_pos()
+        else:
+            next_pos = self._attempt_next_pos(pos, action)
         
         # If the task is continuous and the agent is in a terminal
         # state, then we sample a new start position
-        next_state = self._get_state_from_pos(next_pos)
-        if next_state in self.goal_states:
-            next_pos = self._sample_start_pos()
 
         return next_pos
 

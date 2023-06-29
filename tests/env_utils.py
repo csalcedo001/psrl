@@ -62,9 +62,15 @@ two_starts = [
     ['S', ' ', ' '],
 ]
 
-no_starts = [
+no_start = [
     [' ', ' ', ' '],
     [' ', ' ', 'G'],
+    [' ', ' ', ' '],
+]
+
+no_goal_no_starts = [
+    [' ', ' ', ' '],
+    [' ', ' ', ' '],
     [' ', ' ', ' '],
 ]
 
@@ -94,7 +100,8 @@ shape_to_grid = {
     'two_goals': two_goals,
     'no_goal': no_goal,
     'two_starts': two_starts,
-    'no_starts': no_starts,
+    'no_start': no_start,
+    'no_goal_no_start': no_goal_no_starts,
     'middle_wall': middle_wall,
     'zig': zig,
     'big': big
