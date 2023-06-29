@@ -116,7 +116,7 @@ class UCRL2_v2(Agent):
 
 		self.distances()
 
-		self.policy, (self.u, _, _, _) = extended_value_iteration(p_estimate, r_estimate, 1000, self.p_distances, self.r_distances)
+		self.policy, (self.u, _, _, _) = extended_value_iteration(p_estimate, r_estimate, self.p_distances, self.r_distances, max_iter=1000)
 
 	# To reinitialize the learner with a given initial state inistate.
 	def reset(self,inistate):

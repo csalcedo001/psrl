@@ -116,7 +116,7 @@ class UCRL2Agent(Agent):
                 for next_s in range(self.nS):
                     p_estimate[s, a, next_s] = self.Pk[s, a, next_s] / div
         self.distances()
-        self.policy, (self.u, self.q, _, _) = extended_value_iteration(p_estimate, r_estimate, 1000, self.p_distances, self.r_distances)
+        self.policy, (self.u, self.q, _, _) = extended_value_iteration(p_estimate, r_estimate, self.p_distances, self.r_distances, max_iter=1000)
         # self.EVI(r_estimate, p_estimate)
 
     # To reinitialize the learner with a given initial state inistate.
