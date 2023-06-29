@@ -140,7 +140,9 @@ class TestGridworld(TestCase):
 
                 # Deterministic reward only when transitioning to goal state
                 cell_value = gridworld_data[shape]['grid'][next_pos[0]][next_pos[1]]
-                if attempted_next_s in env.goal_states or cell_value == 'R':
+                if attempted_next_s in env.goal_states and s not in env.goal_states:
+                    expected_r = 1
+                elif cell_value == 'R':
                     expected_r = 1
                 elif cell_value == '.':
                     expected_r = -1
@@ -153,4 +155,4 @@ class TestGridworld(TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)

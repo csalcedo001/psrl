@@ -182,7 +182,9 @@ class GridworldEnv(Env):
                 # state is not terminal but is a reward state iii) next state
                 # is not terminal and but is a penalty state
                 grid_char = self.grid[next_pos[0]][next_pos[1]]
-                if attempted_next_state in self.goal_states or grid_char == 'R':
+                if attempted_next_state in self.goal_states and state not in self.goal_states:
+                    r[state, action] = 1
+                elif grid_char == 'R':
                     r[state, action] = 1
                 elif grid_char == '.':
                     r[state, action] = -1

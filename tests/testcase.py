@@ -3,8 +3,8 @@ import numpy as np
 
 P = 10 # Precision
 
-def equality_error_message(a, b):
-    return '\nReturned: {0}.\nExpected: {1}'.format(a, b)
+def equality_error_message(given, expected):
+    return '\nReturned: {0}.\nExpected: {1}'.format(given, expected)
 
 class TestCase(unittest.TestCase):
     def assertRoundEqual(self, a, b):
@@ -24,8 +24,8 @@ class TestCase(unittest.TestCase):
             msg=equality_error_message(a, b)
         )
     
-    def assertNumpyEqual(self, a, b):
+    def assertNumpyEqual(self, given, expected):
         self.assertTrue(
-            np.all(a.round(P) == b.round(P)),
-            msg=equality_error_message(a, b)
+            np.all(given.round(P) == expected.round(P)),
+            msg=equality_error_message(given, expected)
         )
