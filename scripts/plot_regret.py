@@ -103,8 +103,8 @@ save_config(config.toDict(), config.experiment_dir)
 
 
 # Run experiment and get results
-agents = ['psrl', 'kl_ucrl']
-runs_per_agent = 20
+agents = ['psrl', 'ucrl2', 'kl_ucrl']
+runs_per_agent = 3
 max_parallel_runs = 1
 
 # TODO: fix parallelization, it's slower than serial execution...
