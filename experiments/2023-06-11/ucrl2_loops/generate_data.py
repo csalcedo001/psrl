@@ -15,6 +15,7 @@ exp_config = load_experiment_config('exp_config.yaml')
 
 
 env_config = get_env_config('tworoom')
+env_config['gamma'] = exp_config.gamma
 env = TwoRoomGridworldEnv(env_config)
 
 

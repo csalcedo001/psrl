@@ -11,8 +11,10 @@ def choose_gridworld_color(symbol):
         color = 'k'
     elif symbol == 'S':
         color = 'b'
-    elif symbol == 'T':
+    elif symbol == 'G':
         color = 'g'
+    elif symbol == 'R':
+        color = 'y'
     elif symbol == '.':
         color = '#7f7f7f'
     else:
