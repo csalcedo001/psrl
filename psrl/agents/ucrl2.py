@@ -155,7 +155,6 @@ class UCRL2Agent(Agent):
             "Rk": self.Rk,
             "Pk": self.Pk,
             "u": self.u,    
-            "q": self.q,
             "nS": self.nS,
             "nA": self.nA,
             "delta": self.delta,
@@ -178,7 +177,6 @@ class UCRL2Agent(Agent):
         self.Rk = data["Rk"]
         self.Pk = data["Pk"]
         self.u = data["u"]
-        self.q = data["q"]
         self.nS = data["nS"]
         self.nA = data["nA"]
         self.delta = data["delta"]
