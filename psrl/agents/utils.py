@@ -17,16 +17,16 @@ def policy_evaluation(p, r, pi, gamma=1, epsilon=1e-2, max_iter=100):
         r = r.mean(axis=2)
 
 
+    avg_r = get_policy_average_reward(p, r, pi)
+    
     for i in range(int(max_iter)):
         q = r + np.einsum('ijk, k -> ij', p, gamma * v)
-        v_ = np.einsum('ij, ij -> i', pi, q)
+        if gamma == 1:
+            q -= avg_r
 
-        if gamma < 1:
-            dists = np.abs(v_ - v)
-        elif gamma == 1:
-            # Get average reward value function
-            dists = np.abs(v_ / max(i, 1)  - v / (i + 1))
-        
+        v_ = np.einsum('ij, ij -> i', pi, q)        # equivalent to np.sum(pi * q, axis=1)
+
+        dists = np.abs(v_ - v)
         diff = dists.max()
         
         # Check if value function is epsilon-optimal
@@ -34,9 +34,6 @@ def policy_evaluation(p, r, pi, gamma=1, epsilon=1e-2, max_iter=100):
             break
 
         v = v_
-    
-    if gamma == 1:
-        v = v / i
 
     return v
 
@@ -82,25 +79,20 @@ def extended_value_iteration(p, r, cb_p=None, cb_r=None, gamma=1, epsilon=1e-2, 
 
         # Compute policy pi
         q = r_tilde + np.einsum('ijk, k -> ij', p_tilde, gamma * v)
+        pi = np.argmax(q, axis=1)
+        if gamma == 1:
+            avg_r = get_policy_average_reward(p_tilde, r_tilde, pi)
+            q -= avg_r
         v_ = np.max(q, axis=1)
 
-        if gamma < 1:
-            dists = np.abs(v_ - v)
-        elif gamma == 1:
-            dists = np.abs(v_ / max(i, 1)  - v / (i + 1))
+        dists = np.abs(v_ - v)
         diff = dists.max()
+
+        v = v_
         
         # Check if value function is epsilon-optimal
         if diff < epsilon:
             break
-
-        v = v_
-
-    # Get policy from value function
-    if gamma == 1:
-        v = v / i
-    q = r_tilde + np.einsum('ijk, k -> ij', p_tilde, gamma * v)
-    pi = np.argmax(q, axis=1)
 
     return pi, (v, q, p_tilde, r_tilde)
 

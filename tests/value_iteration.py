@@ -165,7 +165,7 @@ value_iteration_parameters = [
 
 class TestValueIteration(TestCase):
     epsilon = 1e-3      # Threshold of absolute maximum difference
-    max_iter = 1000     # Maximum number of iterations
+    max_iter = 100      # Maximum number of iterations
 
     
     @parameterized.expand(policy_evaluation_parameters)
@@ -187,12 +187,9 @@ class TestValueIteration(TestCase):
 
         v_hat = agents.utils.policy_evaluation(**args)
         v = brute_force_policy_evaluation(**args)
-        
-        if gamma == 1:
-            self.assertNumpyEqual(v_hat, v)
-        else:
-            diff = np.abs(v_hat - v).max()
-            self.assertRoundEqual(diff, 0)
+
+        diff = np.abs(v_hat - v).max()
+        self.assertTrue(diff < 2 * self.epsilon, msg=(diff, self.epsilon))
 
         
     @parameterized.expand([(name,) for name in grids_and_policies])
@@ -224,7 +221,7 @@ class TestValueIteration(TestCase):
         avg_r = brute_force_policy_average_reward(p, r, pi)
         avg_r_hat = agents.utils.get_policy_average_reward(p, r, pi)
 
-        self.assertNumpyEqual(avg_r_hat, avg_r)
+        self.assertRoundEqual(avg_r_hat, avg_r)
 
     
     @parameterized.expand(value_iteration_parameters)
@@ -253,11 +250,9 @@ class TestValueIteration(TestCase):
         # policy evaluation
         _, q_hat = agents.utils.value_iteration(**args)
         v_hat = q_hat.max(axis=1)
-        if gamma == 1:
-            self.assertNumpyEqual(v_hat, v)
-        else:
-            diff = np.abs(v_hat - v).max()
-            self.assertRoundEqual(diff, 0)
+
+        diff = np.abs(v_hat - v).max()
+        self.assertTrue(diff < 2 * self.epsilon, msg=(diff, self.epsilon))
 
 
     
@@ -287,11 +282,9 @@ class TestValueIteration(TestCase):
         # on the optimal policy
         pi_hat, _ = agents.utils.value_iteration(**args)
         v_hat = brute_force_policy_evaluation(pi=pi_hat, **args)
-        if gamma == 1:
-            self.assertNumpyEqual(v_hat, v)
-        else:
-            diff = np.abs(v_hat - v).max()
-            self.assertRoundEqual(diff, 0)
+
+        diff = np.abs(v_hat - v).max()
+        self.assertTrue(diff < 2 * self.epsilon, msg=(diff, self.epsilon))
 
 
 

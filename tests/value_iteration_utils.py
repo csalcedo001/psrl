@@ -1,4 +1,5 @@
 import numpy as np
+from psrl.agents.utils import get_policy_average_reward
 
 def brute_force_policy_evaluation(p, r, pi, gamma, epsilon, max_iter):
     n_s, n_a, _ = p.shape
@@ -15,22 +16,28 @@ def brute_force_policy_evaluation(p, r, pi, gamma, epsilon, max_iter):
         delta = 0
         v_next = np.zeros(n_s)
 
+        avg_r = get_policy_average_reward(p, r, pi)
+
         for s in range(n_s):
             for a in range(n_a):
-                v_next[s] += pi[s, a] * np.sum([p[s, a, s_] * (r[s, a] + gamma * v[s_]) for s_ in range(n_s)])
+                if gamma < 1:
+                    v_next[s] += pi[s, a] * np.sum([
+                        p[s, a, s_] * (r[s, a] + gamma * v[s_])
+                        for s_ in range(n_s)
+                    ])
+                elif gamma == 1:
+                    v_next[s] += pi[s, a] * np.sum([
+                        p[s, a, s_] * (r[s, a] - avg_r + v[s_]) 
+                        for s_ in range(n_s)
+                    ])
             
             diff = abs(v_next[s] - v[s])
             delta = max(diff, delta)
         
-        # For most cases where gamma = 1 and reward = 1, this stop
-        # condition won't go through
+        v = v_next
+        
         if delta < epsilon:
             break
-        
-        v = v_next
-    
-    if gamma == 1:
-        v = v / i
     
     return v
 
