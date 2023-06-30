@@ -1,5 +1,6 @@
 from transformers import TrajectoryTransformerModel
 import torch
+import torch.nn as nn
 import numpy as np
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -8,8 +9,6 @@ print("CURRENT DEVICE:", device)
 model = TrajectoryTransformerModel.from_pretrained(
     "CarlCochet/trajectory-transformer-halfcheetah-medium-v2"
 )
-
-print("Model config:", model.config)
 
 model.to(device)
 model.eval()
@@ -46,6 +45,24 @@ hidden_states = torch.Tensor([t1.cpu().detach().numpy().tolist() for t1 in outpu
 attentions = torch.Tensor([t1.cpu().detach().numpy().tolist() for t1 in outputs.attentions])
 
 
+print("******** CONFIG ********")
+print(model.config)
+print()
+
+print("******** MODEL ********")
+print(model)
+print()
+
+
+print("******** INPUT ********")
+print("Trajectories shape (batch_size, sequence_length):")
+print("   ", trajectories.shape)
+
+print()
+
+
+print("******** OUTPUT ********")
+
 # Single float
 print("Loss (scalar):")
 print("   ", loss)
@@ -68,3 +85,12 @@ print("   ", hidden_states.shape)
 # Shape: (batch_size, num_heads, sequence_length, sequence_length)
 print("Attentions shape (n_layers, batch_size, num_heads, sequence_length, sequence_length):")
 print("   ", attentions.shape)
+print()
+
+
+y = nn.Softmax(dim=-1)(logits).argmax(dim=-1).cpu().detach()
+print("Output sequence shape:")
+print("   ", y.shape)
+
+print("Output sequence:")
+print("   ", y)
