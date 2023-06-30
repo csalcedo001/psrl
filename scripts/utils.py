@@ -1,3 +1,6 @@
+import yaml
+from dotmap import DotMap
+
 def choose_gridworld_color(symbol):
     if symbol == ' ':
         color = 'w'
@@ -13,3 +16,9 @@ def choose_gridworld_color(symbol):
         color = None
     
     return color
+
+def load_experiment_config(path):
+    with open(path, 'r') as f:
+        config = yaml.load(f, yaml.FullLoader)
+    
+    return DotMap(config)

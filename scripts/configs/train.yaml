@@ -1,0 +1,5 @@
+env: riverswim
+agent: ucrl2
+training_steps: 100
+gamma: 0.99
+save_path: 'checkpoints'

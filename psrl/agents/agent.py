@@ -1,6 +1,7 @@
 class Agent():
     def __init__(self, env, config):
-        pass
+        self.env = env
+        self.config = config
 
     def reset(self, state):
         raise NotImplementedError

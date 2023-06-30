@@ -3,7 +3,7 @@ import numpy as np
 def solve_tabular_mdp(*args, **kwargs):
     return value_iteration(*args, **kwargs)
 
-def policy_evaluation(p, r, pi, gamma=1, epsilon=1e-2, max_iter=100):
+def policy_evaluation(p, r, pi, gamma=0.99, epsilon=1e-2, max_iter=100):
     n_s, n_a = p.shape[:2]
 
     if pi.shape != (n_s, n_a):
@@ -46,7 +46,7 @@ def value_iteration(*args, **kwargs):
 
     return pi, q
 
-def extended_value_iteration(p, r, cb_p=None, cb_r=None, gamma=1, epsilon=1e-2, max_iter=100):
+def extended_value_iteration(p, r, cb_p=None, cb_r=None, gamma=0.99, epsilon=1e-2, max_iter=100):
     is_value_iteration = cb_p is None or cb_r is None
 
     n_s, n_a = p.shape[:2]
