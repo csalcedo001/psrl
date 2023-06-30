@@ -1,5 +1,6 @@
 import numpy as np
 import copy as cp
+import pickle
 
 from .agent import Agent
 from .utils import extended_value_iteration
@@ -142,6 +143,47 @@ class UCRL2Agent(Agent):
     
     def update(self):
         pass
+
+    def save(self, path):
+        data = {
+            "observations": self.observations,
+            "vk": self.vk,
+            "Nk": self.Nk,
+            "policy": self.policy,
+            "r_distances": self.r_distances,
+            "p_distances": self.p_distances,
+            "Rk": self.Rk,
+            "Pk": self.Pk,
+            "u": self.u,    
+            "q": self.q,
+            "nS": self.nS,
+            "nA": self.nA,
+            "delta": self.delta,
+            "t": self.t,
+        }
+
+        with open(path, 'wb') as out_file:
+            pickle.dump(data, out_file)
+
+    def load(self, path):
+        with open(path, 'rb') as in_file:
+            data = pickle.load(in_file)
+        
+        self.observations = data["observations"]
+        self.vk = data["vk"]
+        self.Nk = data["Nk"]
+        self.policy = data["policy"]
+        self.r_distances = data["r_distances"]
+        self.p_distances = data["p_distances"]
+        self.Rk = data["Rk"]
+        self.Pk = data["Pk"]
+        self.u = data["u"]
+        self.q = data["q"]
+        self.nS = data["nS"]
+        self.nA = data["nA"]
+        self.delta = data["delta"]
+        self.t = data["t"]
+
 
 class KLUCRLAgent(UCRL2Agent):
     def __init__(self, env, config):
