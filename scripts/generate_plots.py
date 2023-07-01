@@ -64,10 +64,17 @@ else:
 # Save plots
 print('Saving plots...')
 
+save_policy_plot(
+    env,
+    agent,
+    get_file_path_from_config('policy.png', exp_config, mkdir=True, root_type='plots'),
+    title='Policy',
+)
+
 save_expected_reward_heatmap_plot(
     env,
     r_hat,
-    get_file_path_from_config('expected_reward.png', exp_config, mkdir=True, root_type='plots'),
+    get_file_path_from_config('expected_reward.png', exp_config, root_type='plots'),
     title='Expected Reward',
 )
 save_action_value_heatmap_plot(

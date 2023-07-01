@@ -61,6 +61,8 @@ def add_cell_divisions_to_grid(ax, env):
 
 
 def save_policy_plot(env, agent, file_path, title=None):
+    print("Processing policy plot...")
+
     origins = []
     vectors = []
     for state in range(env.observation_space.n):
