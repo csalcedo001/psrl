@@ -5,6 +5,7 @@ import numpy as np
 from transformers import GPT2Config, GPT2LMHeadModel
 import pickle
 from tqdm import tqdm
+from accelerate import Accelerator
 
 from psrl.config import get_env_config
 from psrl.utils import env_name_map
@@ -67,8 +68,8 @@ exp_config = load_experiment_config(config_path)
 # Setup experiment
 set_seed(exp_config.seed)
 print("*** SEED:", exp_config.seed)
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print("*** CURRENT DEVICE:", device)
+
+accelerator = Accelerator()
 
 
 
@@ -113,7 +114,6 @@ model_config.n_positions = exp_config.seq_len
 model_config.n_ctx = exp_config.seq_len
 
 model = GPT2LMHeadModel(model_config)
-model.to(device)
 model.train()
 
 
@@ -122,6 +122,8 @@ model.train()
 optimizer = torch.optim.Adam(model.parameters(), lr=exp_config.lr)
 criterion = torch.nn.CrossEntropyLoss()
 
+model, optimizer, data_loader = accelerator.prepare(model, optimizer, data_loader)
+
 losses = []
 
 print("Starting training...")
@@ -129,15 +131,13 @@ for epoch in range(exp_config.epochs):
     pbar = tqdm(total=len(data_loader))
     for batch in data_loader:
         x, y = batch
-
-        x = x.to(device)
-        y = y.to(device)
         
         output = model(input_ids=x)
         y_hat = output.logits.view(-1, vocab_size)
         loss = criterion(y_hat, y.view(-1))
 
-        loss.backward()
+        accelerator.backward(loss)
+
         optimizer.step()
         optimizer.zero_grad()
 
@@ -149,6 +149,8 @@ for epoch in range(exp_config.epochs):
 
 
 # Evaluation after training
+device = accelerator.device
+
 x, y = next(iter(data_loader))
 x = x.to(device)
 
@@ -165,7 +167,7 @@ print(y_hat_post[-10:, -20:])
 print()
 
 print("y:")
-print(y.numpy()[-10:, -20:])
+print(y.cpu().numpy()[-10:, -20:])
 print()
 
 
