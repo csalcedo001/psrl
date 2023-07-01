@@ -4,6 +4,7 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from transformers import GPT2Config, GPT2LMHeadModel
 import pickle
+import random
 from tqdm import tqdm
 
 from psrl.config import get_env_config
@@ -16,6 +17,9 @@ from utils import load_experiment_config, set_seed, get_file_path_from_config
 
 class TrajectoryDataset(Dataset):
     def __init__(self, env, raw_trajectories, seq_len=1024):
+        if seq_len % 2 != 0:
+            raise ValueError("seq_len must be even")
+        
         trajectories = []
         for s, a, _, _ in raw_trajectories:
             trajectories.append(s + env.action_space.n)
@@ -23,13 +27,28 @@ class TrajectoryDataset(Dataset):
         
         self.trajectories = trajectories
         self.seq_len = seq_len
+        self.missing_token = env.observation_space.n + env.action_space.n
+    
+    def get_vocab_size(self):
+        return self.missing_token + 1
 
     def __len__(self):
         return (len(self.trajectories) - self.seq_len) // 2
     
     def __getitem__(self, idx):
-        trajectory = self.trajectories[2 * idx: 2 * idx + self.seq_len]
-        return torch.LongTensor(trajectory)
+        # Get trajectory of length seq_len
+        trajectory = np.array(self.trajectories[2 * idx: 2 * idx + self.seq_len])
+
+        y = torch.LongTensor(trajectory)
+
+        # Mask some actions
+        missing_actions = random.randint(1, self.seq_len // 2)
+        missing_s_and_a = 2 * missing_actions - 1
+
+        trajectory[-missing_s_and_a:] = self.missing_token
+        x = torch.LongTensor(trajectory)
+
+        return x, y
 
 
 
@@ -62,9 +81,6 @@ env = env_class(env_config)
 
 
 # Get dataset of trajectories
-vocab_size = env.observation_space.n + env.action_space.n + 1       # 1 for <missing> token
-missing_token = vocab_size - 1
-
 checkpoints_path = os.path.join(os.path.dirname(__file__), exp_config.save_path)
 os.makedirs(checkpoints_path, exist_ok=True)
 
@@ -77,6 +93,7 @@ trajectory_dataset = TrajectoryDataset(
     raw_trajectories,
     seq_len=exp_config.seq_len
 )
+vocab_size = trajectory_dataset.get_vocab_size()
 
 data_loader = DataLoader(
     trajectory_dataset,
@@ -110,11 +127,10 @@ print("Starting training...")
 for epoch in range(exp_config.epochs):
     pbar = tqdm(total=len(data_loader))
     for batch in data_loader:
-        batch = batch.to(device)
+        x, y = batch
 
-        y = batch.detach().clone()
-        x = batch
-        x[:, -1] = missing_token
+        x = x.to(device)
+        y = y.to(device)
         
         output = model(input_ids=x)
         y_hat = output.logits.view(-1, vocab_size)
@@ -132,10 +148,8 @@ for epoch in range(exp_config.epochs):
 
 
 # Evaluation after training
-batch = next(iter(data_loader))
-y = batch.detach().clone().numpy()
-x = batch.to(device)
-x[:, -1] = missing_token
+x, y = next(iter(data_loader))
+x = x.to(device)
 
 model.eval()
 output = model(input_ids=x)
@@ -143,7 +157,7 @@ y_hat_post = output.logits.argmax(dim=-1).cpu().numpy()
 
 
 print("y:")
-print(y[-10:, -20:])
+print(y.numpy()[-10:, -20:])
 print()
 
 print("y_hat:")
