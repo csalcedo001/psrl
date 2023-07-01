@@ -16,9 +16,13 @@ from utils import load_experiment_config, set_seed, get_file_path_from_config
 
 
 class TrajectoryDataset(Dataset):
-    def __init__(self, env, raw_trajectories, seq_len=1024):
+    def __init__(self, env, raw_trajectories, seq_len=64, beta=8):
         if seq_len % 2 != 0:
             raise ValueError("seq_len must be even")
+        
+        self.seq_len = seq_len
+        self.beta = beta
+        self.missing_token = env.observation_space.n + env.action_space.n
         
         trajectories = []
         for s, a, _, _ in raw_trajectories:
@@ -26,8 +30,6 @@ class TrajectoryDataset(Dataset):
             trajectories.append(a)
         
         self.trajectories = trajectories
-        self.seq_len = seq_len
-        self.missing_token = env.observation_space.n + env.action_space.n
     
     def get_vocab_size(self):
         return self.missing_token + 1
@@ -42,11 +44,11 @@ class TrajectoryDataset(Dataset):
         y = torch.LongTensor(trajectory)
 
         # Mask some actions
-        missing_actions = random.randint(1, self.seq_len // 2)
+        missing_actions = 1 + min(int(np.random.exponential(self.beta)), self.seq_len // 2)
         missing_s_and_a = 2 * missing_actions - 1
 
-        trajectory[-missing_s_and_a:] = self.missing_token
-        x = torch.LongTensor(trajectory)
+        x = torch.LongTensor(trajectory.copy())
+        x[-missing_s_and_a:] = self.missing_token
 
         return x, y
 
@@ -155,13 +157,16 @@ model.eval()
 output = model(input_ids=x)
 y_hat_post = output.logits.argmax(dim=-1).cpu().numpy()
 
-
-print("y:")
-print(y.numpy()[-10:, -20:])
+print("x:")
+print(x.cpu().detach().numpy()[-10:, -20:])
 print()
 
 print("y_hat:")
 print(y_hat_post[-10:, -20:])
+print()
+
+print("y:")
+print(y.numpy()[-10:, -20:])
 print()
 
 
