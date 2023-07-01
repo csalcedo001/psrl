@@ -9,12 +9,12 @@ seed: 0
 
 # Environment and agent parameters
 env: tworoom
-agent: ucrl2
+agent: psrl
 gamma: 0.99
 no_goal: True
 
 # Data generation parameters
-training_steps: 1000
+training_steps: 1000000
 
 # Transformer training parameters
 epochs: 10

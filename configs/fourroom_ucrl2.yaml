@@ -1,0 +1,23 @@
+# Description: Configuration file for the experiment
+
+# Data parameters
+save_path: '/data/csalcedo/psrl/data'
+plots_path: 'plots'
+
+# Setup parameters
+seed: 0
+
+# Environment and agent parameters
+env: fourroom
+agent: ucrl2
+gamma: 0.99
+no_goal: True
+
+# Data generation parameters
+training_steps: 1000000
+
+# Transformer training parameters
+epochs: 10
+batch_size: 100
+lr: 0.001
+seq_len: 64
