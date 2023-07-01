@@ -24,6 +24,7 @@ class UCRL2Agent(Agent):
         self.Pk = np.zeros((self.nS, self.nA, self.nS))
         self.Rk = np.zeros((self.nS, self.nA))
         self.u = np.zeros(self.nS)
+        self.q = np.zeros((self.nS, self.nA))
 
     def name(self):
         return "UCRL2"
@@ -115,7 +116,7 @@ class UCRL2Agent(Agent):
                 for next_s in range(self.nS):
                     p_estimate[s, a, next_s] = self.Pk[s, a, next_s] / div
         self.distances()
-        self.policy, (self.u, _, _, _) = extended_value_iteration(p_estimate, r_estimate, self.p_distances, self.r_distances, max_iter=100)
+        self.policy, (self.u, self.q, _, _) = extended_value_iteration(p_estimate, r_estimate, self.p_distances, self.r_distances, max_iter=100)
 
     # To reinitialize the learner with a given initial state inistate.
     def reset(self,inistate):
@@ -159,6 +160,7 @@ class UCRL2Agent(Agent):
             "nA": self.nA,
             "delta": self.delta,
             "t": self.t,
+            "q": self.q,
         }
 
         with open(path, 'wb') as out_file:
@@ -181,6 +183,7 @@ class UCRL2Agent(Agent):
         self.nA = data["nA"]
         self.delta = data["delta"]
         self.t = data["t"]
+        self.q = data["q"]
 
 
 class KLUCRLAgent(UCRL2Agent):
