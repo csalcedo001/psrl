@@ -14,10 +14,10 @@ from utils import load_experiment_config
 
 
 class TrajectoryDataset(Dataset):
-    def __init__(self, raw_trajectories, seq_len=1024, transform=None):
+    def __init__(self, env, raw_trajectories, seq_len=1024):
         trajectories = []
         for s, a, _, _ in raw_trajectories:
-            trajectories.append(s)
+            trajectories.append(s + env.action_space.n)
             trajectories.append(a)
         
         self.trajectories = trajectories
@@ -67,6 +67,7 @@ with open(data_path, 'rb') as f:
     raw_trajectories = pickle.load(f)
 
 trajectory_dataset = TrajectoryDataset(
+    env,
     raw_trajectories,
     seq_len=exp_config.seq_len
 )
