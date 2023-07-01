@@ -77,7 +77,8 @@ trajectory_dataset = TrajectoryDataset(
 data_loader = DataLoader(
     trajectory_dataset,
     batch_size=exp_config.batch_size,
-    shuffle=True
+    shuffle=True,
+    drop_last=True,
 )
 
 
