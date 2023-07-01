@@ -1,9 +1,6 @@
-import os
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-
-from utils import get_file_path_from_config
 
 
 def choose_gridworld_color(symbol):
@@ -43,27 +40,24 @@ def init_plt_grid(ax, env):
             ax.add_patch(plt.Rectangle((x, y), 1, 1, color=color))
 
 def add_cell_divisions_to_grid(ax, env):
-    plt.xlim(0, env.cols)
-    plt.ylim(0, env.rows)
-
-    ax.set_aspect('equal')
-    ax.set_xticks([])
-    ax.set_yticks([])
-
     x = np.arange(0, env.cols + 1)
     y_0 = np.zeros(env.cols + 1)
     y_1 = np.ones(env.cols + 1) * env.rows
 
-    vertical = np.stack([x, y_0, x, y_1])
+    vertical = np.stack([x, y_0, x, y_1]).T
 
     y = np.arange(0, env.rows + 1)
     x_0 = np.zeros(env.rows + 1)
     x_1 = np.ones(env.rows + 1) * env.cols
 
-    horizontal = np.stack([x_0, y, x_1, y])
+    horizontal = np.stack([x_0, y, x_1, y]).T
 
-    ax.plot(*vertical, color='k')
-    ax.plot(*horizontal, color='k')
+    # Plot lines
+    for x0, y0, x1, y1 in vertical:
+        plt.plot([x0, x1], [y0, y1], 'k', linewidth=0.5)
+
+    for x0, y0, x1, y1 in horizontal:
+        plt.plot([x0, x1], [y0, y1], 'k', linewidth=0.5)
 
 
 def save_policy_plot(env, agent, file_path, title=None):
@@ -110,7 +104,9 @@ def save_policy_plot(env, agent, file_path, title=None):
 
     plt.quiver(*origins, *vectors, color='#000000', scale=1, scale_units='xy', angles='xy')
 
+    add_cell_divisions_to_grid(ax, env)
     
+
     plt.savefig(file_path)
     plt.close(fig)
 
@@ -140,8 +136,10 @@ def save_expected_reward_heatmap_plot(env, r_hat, file_path, title=None):
         ax.add_patch(plt.Rectangle((x, y), 1, 1, color=cmap.to_rgba(r[state])))
     
     fig.colorbar(cmap, ax=ax)
-        
+
+    add_cell_divisions_to_grid(ax, env)
     
+
     plt.savefig(file_path)
     plt.close(fig)
 
@@ -188,6 +186,8 @@ def save_action_value_heatmap_plot(env, q, file_path, title=None):
             ax.add_patch(plt.Polygon(triang_pts, color=cmap.to_rgba(q[state, action])))
     
     fig.colorbar(cmap, ax=ax)
+
+    add_cell_divisions_to_grid(ax, env)
         
     
     plt.savefig(file_path)
@@ -217,6 +217,8 @@ def save_state_value_heatmap_plot(env, v, file_path, title=None):
         ax.add_patch(plt.Rectangle((x, y), 1, 1, color=cmap.to_rgba(v[state])))
     
     fig.colorbar(cmap, ax=ax)
+
+    add_cell_divisions_to_grid(ax, env)
         
     
     plt.savefig(file_path)
@@ -248,6 +250,8 @@ def save_empirical_state_visitation_heatmap_plot(env, state_count, file_path, ti
 
     fig.colorbar(cmap, ax=ax)
 
+    add_cell_divisions_to_grid(ax, env)
+
     
     plt.savefig(file_path)
     plt.close(fig)
@@ -277,6 +281,8 @@ def save_reward_count_heatmap_plot(env, r_count, file_path, title=None):
         ax.add_patch(plt.Rectangle((x, y), 1, 1, color=cmap.to_rgba(r_emp[state])))
 
     fig.colorbar(cmap, ax=ax)
+
+    add_cell_divisions_to_grid(ax, env)
 
     
     plt.savefig(file_path)
