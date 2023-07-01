@@ -51,6 +51,7 @@ exp_config = load_experiment_config(config_path)
 env_class = env_name_map[exp_config.env]
 env_config = get_env_config(exp_config.env)
 env_config['gamma'] = exp_config.gamma
+env_config['no_goal'] = exp_config.no_goal
 env = env_class(env_config)
 
 
