@@ -289,3 +289,16 @@ def save_reward_count_heatmap_plot(env, r_count, file_path, title=None):
     
     plt.savefig(file_path)
     plt.close(fig)
+
+def save_losses_plot(losses, file_path, title=None):
+    print("Processing losses plot...")
+
+    fig, ax = plt.subplots()
+    plt.title(title)
+    plt.xlabel("Iteration")
+    plt.ylabel("Loss")
+
+    ax.plot(losses)
+
+    plt.savefig(file_path)
+    plt.close(fig)

@@ -4,7 +4,6 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from transformers import GPT2Config, GPT2LMHeadModel
 import pickle
-import random
 from tqdm import tqdm
 
 from psrl.config import get_env_config
