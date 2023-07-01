@@ -62,7 +62,8 @@ env = env_class(env_config)
 
 
 # Get dataset of trajectories
-vocab_size = env.observation_space.n + env.action_space.n
+vocab_size = env.observation_space.n + env.action_space.n + 1       # 1 for <missing> token
+missing_token = vocab_size - 1
 
 checkpoints_path = os.path.join(os.path.dirname(__file__), exp_config.save_path)
 os.makedirs(checkpoints_path, exist_ok=True)
@@ -111,11 +112,13 @@ for epoch in range(exp_config.epochs):
     for batch in data_loader:
         batch = batch.to(device)
 
-        attention_mask = torch.ones_like(batch).to(device)
-        attention_mask[:, -1:] = 0
-
-        output = model(input_ids=batch, attention_mask=attention_mask)
-        loss = criterion(output.logits.view(-1, vocab_size), batch.view(-1))
+        y = batch.detach().clone()
+        x = batch
+        x[:, -1] = missing_token
+        
+        output = model(input_ids=x)
+        y_hat = output.logits.view(-1, vocab_size)
+        loss = criterion(y_hat, y.view(-1))
 
         loss.backward()
         optimizer.step()
@@ -129,15 +132,18 @@ for epoch in range(exp_config.epochs):
 
 
 # Evaluation after training
-sample_batch = next(iter(data_loader)).to(device)
+batch = next(iter(data_loader))
+y = batch.detach().clone().numpy()
+x = batch.to(device)
+x[:, -1] = missing_token
 
 model.eval()
-output = model(input_ids=sample_batch, attention_mask=attention_mask)
+output = model(input_ids=x)
 y_hat_post = output.logits.argmax(dim=-1).cpu().numpy()
 
 
-print("trajectories:")
-print(sample_batch.cpu().numpy()[-10:, -20:])
+print("y:")
+print(y[-10:, -20:])
 print()
 
 print("y_hat:")
