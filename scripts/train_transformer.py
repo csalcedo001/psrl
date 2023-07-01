@@ -11,7 +11,7 @@ from psrl.config import get_env_config
 from psrl.utils import env_name_map
 
 from arg_utils import get_experiment_parser
-from utils import load_experiment_config, set_seed, get_file_path_from_config
+from utils import load_experiment_config, set_seed, get_file_path_from_config, get_experiment_path_from_config
 
 
 
@@ -69,7 +69,8 @@ exp_config = load_experiment_config(config_path)
 set_seed(exp_config.seed)
 print("*** SEED:", exp_config.seed)
 
-accelerator = Accelerator()
+data_dir = get_experiment_path_from_config(exp_config, mkdir=True, root_type='data')
+accelerator = Accelerator(project_dir=data_dir)
 
 
 
@@ -145,6 +146,10 @@ for epoch in range(exp_config.epochs):
 
         pbar.update(1)
         pbar.set_description(f"[{epoch}/{exp_config.epochs}] Loss: {loss.item():.4f}")
+    
+    if epoch % 10 == 0:
+        checkpoints_dir = get_file_path_from_config('checkpoints', exp_config)
+        accelerator.save_state(checkpoints_dir)
 
 
 

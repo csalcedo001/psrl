@@ -39,7 +39,8 @@ def set_seed(seed: int = 0) -> None:
     os.environ["PYTHONHASHSEED"] = str(seed)
     print(f"Random seed set as {seed}")
 
-def get_file_path_from_config(filename, exp_config, mkdir=False, root_type='data'):
+
+def get_experiment_path_from_config(exp_config, mkdir=False, root_type='data'):
     if root_type == 'data':
         root = exp_config.save_path
     elif root_type == 'plots':
@@ -55,6 +56,11 @@ def get_file_path_from_config(filename, exp_config, mkdir=False, root_type='data
             raise ValueError(f"Experiment path {experiment_path} does not exist")
         
         os.makedirs(experiment_path, exist_ok=True)
+    
+    return experiment_path
+
+def get_file_path_from_config(filename, exp_config, mkdir=False, root_type='data'):
+    experiment_path = get_experiment_path_from_config(exp_config, mkdir, root_type)
 
     file_path = os.path.join(experiment_path, filename)
 
