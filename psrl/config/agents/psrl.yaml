@@ -1,5 +1,5 @@
 tau: 20
-gamma: 1.0
+gamma: 0.99
 kappa: 1.0
 mu: 0.0
 lambd: 1.0
