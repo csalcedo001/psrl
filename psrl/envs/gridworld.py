@@ -266,9 +266,11 @@ class TwoRoomGridworldEnv(GridworldEnv):
 
         if config.no_goal:
             for i in range(len(grid)):
-                for j in range(len(grid[0])):
-                    if grid[i][j] == 'G':
-                        grid[i][j] = ' '
+                row = list(grid[i])
+                for j in range(len(row)):
+                    if row[j] == 'G':
+                        row[j] = ' '
+                grid[i] = ''.join(row)
 
         config.grid = grid
 
@@ -283,9 +285,11 @@ class FourRoomGridworldEnv(GridworldEnv):
 
         if config.no_goal:
             for i in range(len(grid)):
-                for j in range(len(grid[0])):
-                    if grid[i][j] == 'G':
-                        grid[i][j] = ' '
+                row = list(grid[i])
+                for j in range(len(row)):
+                    if row[j] == 'G':
+                        row[j] = ' '
+                grid[i] = ''.join(row)
 
         config.grid = grid
 
