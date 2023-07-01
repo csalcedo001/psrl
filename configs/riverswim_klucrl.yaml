@@ -9,7 +9,7 @@ seed: 0
 
 # Environment and agent parameters
 env: riverswim
-agent: ucrl2
+agent: klucrl
 gamma: 0.99
 no_goal: True
 
