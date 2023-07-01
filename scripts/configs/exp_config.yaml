@@ -1,0 +1,18 @@
+# Description: Configuration file for the experiment
+
+# Data parameters
+save_path: '/data/csalcedo/psrl/data'
+
+# Environment and agent parameters
+env: riverswim
+agent: ucrl2
+gamma: 0.99
+
+# Data generation parameters
+training_steps: 10000
+
+# Transformer training parameters
+epochs: 1
+batch_size: 128
+lr: 0.001
+seq_len: 32

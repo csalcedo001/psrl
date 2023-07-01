@@ -12,7 +12,7 @@ from utils import load_experiment_config
 
 
 # Get experiment configuration
-config_path = os.path.join(os.path.dirname(__file__), 'configs', 'generate_data.yaml')
+config_path = os.path.join(os.path.dirname(__file__), 'configs', 'exp_config.yaml')
 exp_config = load_experiment_config(config_path)
 
 
@@ -41,10 +41,10 @@ checkpoints_path = os.path.join(os.path.dirname(__file__), exp_config.save_path)
 os.makedirs(checkpoints_path, exist_ok=True)
 
 # Save agent
-agent_path = os.path.join(checkpoints_path, 'agent.pkl')
+agent_path = os.path.join(checkpoints_path, f'agent_{exp_config.training_steps}.pkl')
 agent.save(agent_path)
 
 # Save trajectories
-trajectories_path = os.path.join(checkpoints_path, 'trajectories.pkl')
+trajectories_path = os.path.join(checkpoints_path, f'trajectories_{exp_config.training_steps}.pkl')
 with open(trajectories_path, 'wb') as f:
     pickle.dump(trajectory, f)
