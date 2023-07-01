@@ -12,7 +12,7 @@ from utils import load_experiment_config
 
 
 # Get experiment configuration
-config_path = os.path.join(os.path.dirname(__file__), 'configs', 'train.yaml')
+config_path = os.path.join(os.path.dirname(__file__), 'configs', 'generate_data.yaml')
 exp_config = load_experiment_config(config_path)
 
 
