@@ -6,7 +6,7 @@ from psrl.config import get_env_config, get_agent_config
 from psrl.train import train
 from psrl.utils import env_name_map, agent_name_map
 
-from utils import load_experiment_config
+from utils import load_experiment_config, set_seed, get_file_path_from_config
 
 
 
@@ -14,6 +14,14 @@ from utils import load_experiment_config
 # Get experiment configuration
 config_path = os.path.join(os.path.dirname(__file__), 'configs', 'exp_config.yaml')
 exp_config = load_experiment_config(config_path)
+
+
+
+# Setup experiment
+set_seed(exp_config.seed)
+print("*** SEED:", exp_config.seed)
+
+
 
 
 # Get environment
@@ -25,7 +33,6 @@ env = env_class(env_config)
 
 
 
-
 # Get agent
 agent_class = agent_name_map[exp_config.agent]
 agent_config = get_agent_config(exp_config.agent)
@@ -33,19 +40,16 @@ agent = agent_class(env, agent_config)
 
 
 
-
 trajectory = train(env, agent, exp_config, max_steps=exp_config.training_steps)
 
 
-# Save agent checkpoints
-checkpoints_path = os.path.join(os.path.dirname(__file__), exp_config.save_path)
-os.makedirs(checkpoints_path, exist_ok=True)
+
 
 # Save agent
-agent_path = os.path.join(checkpoints_path, f'agent_{exp_config.training_steps}.pkl')
+agent_path = get_file_path_from_config('agent.pkl', exp_config, mkdir=True)
 agent.save(agent_path)
 
 # Save trajectories
-trajectories_path = os.path.join(checkpoints_path, f'trajectories_{exp_config.training_steps}.pkl')
+trajectories_path = get_file_path_from_config('trajectories.pkl', exp_config, mkdir=True)
 with open(trajectories_path, 'wb') as f:
     pickle.dump(trajectory, f)

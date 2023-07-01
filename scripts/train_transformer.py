@@ -9,7 +9,7 @@ from tqdm import tqdm
 from psrl.config import get_env_config
 from psrl.utils import env_name_map
 
-from utils import load_experiment_config
+from utils import load_experiment_config, set_seed, get_file_path_from_config
 
 
 
@@ -35,15 +35,17 @@ class TrajectoryDataset(Dataset):
 
 
 
-# Set device
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print("*** CURRENT DEVICE:", device)
-
-
-
 # Get experiment configuration
 config_path = os.path.join(os.path.dirname(__file__), 'configs', 'exp_config.yaml')
 exp_config = load_experiment_config(config_path)
+
+
+
+# Setup experiment
+set_seed(exp_config.seed)
+print("*** SEED:", exp_config.seed)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("*** CURRENT DEVICE:", device)
 
 
 
@@ -56,14 +58,14 @@ env = env_class(env_config)
 
 
 
-# Get data (so far toy data)
+# Get dataset of trajectories
 vocab_size = env.observation_space.n + env.action_space.n
 
 checkpoints_path = os.path.join(os.path.dirname(__file__), exp_config.save_path)
 os.makedirs(checkpoints_path, exist_ok=True)
 
-data_path = os.path.join(checkpoints_path, f'trajectories_{exp_config.training_steps}.pkl')
-with open(data_path, 'rb') as f:
+trajectories_path = get_file_path_from_config('trajectories.pkl', exp_config)
+with open(trajectories_path, 'rb') as f:
     raw_trajectories = pickle.load(f)
 
 trajectory_dataset = TrajectoryDataset(
@@ -106,7 +108,7 @@ for epoch in range(exp_config.epochs):
         batch = batch.to(device)
 
         attention_mask = torch.ones_like(batch).to(device)
-        attention_mask[:, -1] = 0
+        attention_mask[:, -1:] = 0
 
         output = model(input_ids=batch, attention_mask=attention_mask)
         loss = criterion(output.logits.view(-1, vocab_size), batch.view(-1))
@@ -130,15 +132,20 @@ output = model(input_ids=sample_batch, attention_mask=attention_mask)
 y_hat_post = output.logits.argmax(dim=-1).cpu().numpy()
 
 
-print("trajectories:", sample_batch.cpu().numpy()[-5:, -20:])
-print("y_hat:", y_hat_post[-5:, -20:])
+print("trajectories:")
+print(sample_batch.cpu().numpy()[-10:, -20:])
+print()
+
+print("y_hat:")
+print(y_hat_post[-10:, -20:])
+print()
 
 
 
 # Save results
-model_path = os.path.join(checkpoints_path, f'model_{exp_config.training_steps}.pt')
+model_path = get_file_path_from_config('model.pt', exp_config, mkdir=True)
 torch.save(model.state_dict(), model_path)
 
-losses_path = os.path.join(checkpoints_path, f'losses_{exp_config.training_steps}.pkl')
+losses_path = get_file_path_from_config('losses.pkl', exp_config, mkdir=True)
 with open(losses_path, 'wb') as f:
     pickle.dump(losses, f)
