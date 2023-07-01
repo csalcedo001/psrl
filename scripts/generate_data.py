@@ -6,13 +6,16 @@ from psrl.config import get_env_config, get_agent_config
 from psrl.train import train
 from psrl.utils import env_name_map, agent_name_map
 
+from arg_utils import get_experiment_parser
 from utils import load_experiment_config, set_seed, get_file_path_from_config
 
 
 
 
 # Get experiment configuration
-config_path = os.path.join(os.path.dirname(__file__), 'configs', 'exp_config.yaml')
+parser = get_experiment_parser()
+args = parser.parse_args()
+config_path = args.config
 exp_config = load_experiment_config(config_path)
 
 
