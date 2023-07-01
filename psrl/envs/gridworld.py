@@ -264,6 +264,12 @@ class TwoRoomGridworldEnv(GridworldEnv):
 
         grid = get_grid_from_file(gridworld_path)
 
+        if config.no_goal:
+            for i in range(len(grid)):
+                for j in range(len(grid[0])):
+                    if grid[i][j] == 'G':
+                        grid[i][j] = ' '
+
         config.grid = grid
 
         GridworldEnv.__init__(self, config)
@@ -274,6 +280,12 @@ class FourRoomGridworldEnv(GridworldEnv):
         gridworld_path = os.path.join(os.path.dirname(__file__), 'maps', 'four_room.txt')
 
         grid = get_grid_from_file(gridworld_path)
+
+        if config.no_goal:
+            for i in range(len(grid)):
+                for j in range(len(grid[0])):
+                    if grid[i][j] == 'G':
+                        grid[i][j] = ' '
 
         config.grid = grid
 
