@@ -338,9 +338,10 @@ class KLUCRLAgent(UCRL2Agent):
                     else:
                         max_p = self.MaxKL(p_estimate, u0, s, a)
                     
-                    temp = r_estimate[s, a] + self.r_distances[s, a] + sum([u * p for (u, p) in zip(u0, max_p)])
-                    if (a == 0) or (temp > u1[s]):
-                        u1[s] = temp
+                    q_sa = r_estimate[s, a] + self.r_distances[s, a] + sum([u * p for (u, p) in zip(u0, max_p)])
+                    self.q[s, a] = q_sa
+                    if (a == 0) or (q_sa > u1[s]):
+                        u1[s] = q_sa
                         self.policy[s] = a
             
             diff  = [x - y for (x, y) in zip(u1, u0)]
@@ -354,6 +355,76 @@ class KLUCRLAgent(UCRL2Agent):
                 break
 
             niter += 1
+        
+        self.u = u0
+
+    # To start a new episode (init var, computes estmates and run EVI).
+    def new_episode(self):
+        self.updateN() # Don't run it after the reinitialization of self.vk
+        self.vk = np.zeros((self.nS, self.nA))
+        r_estimate = np.zeros((self.nS, self.nA))
+        p_estimate = np.zeros((self.nS, self.nA, self.nS))
+        for s in range(self.nS):
+            for a in range(self.nA):
+                div = max([1, self.Nk[s, a]])
+                r_estimate[s, a] = self.Rk[s, a] / div
+                for next_s in range(self.nS):
+                    p_estimate[s, a, next_s] = self.Pk[s, a, next_s] / div
+        self.distances()
+        self.EVI(r_estimate, p_estimate)
+
+
+
+        # self.nS = env.observation_space.n
+        # self.nA = env.action_space.n
+        # self.t = 1
+        # self.delta = config.delta
+        # self.observations = [[], [], []]
+        # self.vk = np.zeros((self.nS, self.nA))
+        # self.Nk = np.zeros((self.nS, self.nA))
+        # self.policy = np.zeros((self.nS,), dtype=int)
+        # self.r_distances = np.zeros((self.nS, self.nA))
+        # self.p_distances = np.zeros((self.nS, self.nA))
+
+    def save(self, path):
+        data = {
+            "nS": self.nS,
+            "nA": self.nA,
+            "t": self.t,
+            "delta": self.delta,
+            "observations": self.observations,
+            "vk": self.vk,
+            "Nk": self.Nk,
+            "policy": self.policy,
+            "r_distances": self.r_distances,
+            "p_distances": self.p_distances,
+            "Rk": self.Rk,
+            "Pk": self.Pk,
+            "u": self.u,
+            "q": self.q,
+        }
+
+        with open(path, 'wb') as out_file:
+            pickle.dump(data, out_file)
+
+    def load(self, path):
+        with open(path, 'rb') as in_file:
+            data = pickle.load(in_file)
+        
+        self.observations = data["observations"]
+        self.vk = data["vk"]
+        self.Nk = data["Nk"]
+        self.policy = data["policy"]
+        self.r_distances = data["r_distances"]
+        self.p_distances = data["p_distances"]
+        self.Rk = data["Rk"]
+        self.Pk = data["Pk"]
+        self.u = data["u"]
+        self.nS = data["nS"]
+        self.nA = data["nA"]
+        self.delta = data["delta"]
+        self.t = data["t"]
+        self.q = data["q"]
 
 
 
