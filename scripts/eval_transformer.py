@@ -11,7 +11,7 @@ from psrl.utils import env_name_map
 
 from arg_utils import get_experiment_parser
 from trajectory_dataset import TrajectoryDataset
-from metrics import compute_last_action_accuracy
+from metrics import compute_raw_accuracy, compute_last_action_accuracy
 from utils import load_experiment_config, set_seed, get_file_path_from_config, get_experiment_path_from_config
 
 
@@ -101,10 +101,12 @@ accelerator.load_state(checkpoints_dir)
 # Evaluation loop
 model.eval()
 with torch.no_grad():
-    accuracy = compute_last_action_accuracy(model, data_loader)
+    raw_accuracy = compute_raw_accuracy(model, data_loader)
+    last_action_accuracy = compute_last_action_accuracy(model, data_loader)
 
 
-print("Accuracy:", accuracy)
+print("Raw accuracy:", raw_accuracy)
+print("Last action accuracy:", last_action_accuracy)
 
 device = accelerator.device
 
