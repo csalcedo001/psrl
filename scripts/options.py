@@ -81,6 +81,9 @@ class OptionEnvWrapper:
         rewards = []
 
         for action in actions:
+            if action >= self.action_space.n:
+                action = self.env.action_space.sample()
+            
             next_state, reward, done, _ = self.env.step(action)
 
             self.state = next_state
