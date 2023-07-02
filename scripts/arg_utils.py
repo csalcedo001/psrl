@@ -1,3 +1,4 @@
+import os
 import argparse
 from dotmap import DotMap
 
@@ -75,3 +76,17 @@ def get_experiment_parser():
     parser.add_argument('--goal-reward', type=int, default=None, help='Reward for achieving goal')
 
     return parser
+
+
+def process_experiment_config(args, exp_config):
+    if args.seed is not None:
+        exp_config.seed = args.seed
+
+    if args.goal_reward is not None:
+        exp_config.no_goal = args.goal_reward == 0
+
+    if not exp_config.no_goal:
+        exp_config.save_path = os.path.join(exp_config.save_path, 'regret_plot')
+        exp_config.plots_path = os.path.join(exp_config.plots_path, 'regret_plot')
+
+    return exp_config

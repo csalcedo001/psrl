@@ -11,7 +11,7 @@ from psrl.config import get_env_config, get_agent_config
 from psrl.utils import env_name_map, agent_name_map
 from psrl.rollout import rollout
 
-from arg_utils import get_experiment_parser
+from arg_utils import get_experiment_parser, process_experiment_config
 from options import OptionEnvWrapper
 from utils import load_experiment_config, set_seed, get_file_path_from_config, get_experiment_path_from_config
 
@@ -25,23 +25,13 @@ parser = get_experiment_parser()
 args = parser.parse_args()
 config_path = args.config
 exp_config = load_experiment_config(config_path)
+exp_config = process_experiment_config(args, exp_config)
 
 
 
 # Setup experiment
-seed = exp_config.seed
-if args.seed is not None:
-    seed = args.seed
-set_seed(seed)
-print("*** SEED:", seed)
-
-no_goal = exp_config.no_goal
-if args.goal_reward is not None:
-    no_goal = args.goal_reward == 0
-    
-if not no_goal:
-    exp_config.save_path = os.path.join(exp_config.save_path, 'regret_plot')
-    exp_config.plots_path = os.path.join(exp_config.plots_path, 'regret_plot')
+set_seed(exp_config.seed)
+print("*** SEED:", exp_config.seed)
 
 data_dir = get_experiment_path_from_config(exp_config, mkdir=True, root_type='data')
 accelerator = Accelerator(project_dir=data_dir)
