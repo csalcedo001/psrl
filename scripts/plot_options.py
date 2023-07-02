@@ -80,12 +80,12 @@ print('Saving plots...')
 save_empirical_state_visitation_heatmap_plot(
     env,
     option_state_visitation,
-    get_file_path_from_config('environment_state_visitation.png', exp_config, root_type='plots'),
+    get_file_path_from_config('option_state_visitation.png', exp_config, root_type='plots'),
     title='Option-level State Visitation',
 )
 save_empirical_state_visitation_heatmap_plot(
     env,
     env_state_visitation,
-    get_file_path_from_config('option_state_visitation.png', exp_config, root_type='plots'),
+    get_file_path_from_config('environment_state_visitation.png', exp_config, root_type='plots'),
     title='Environment-level State Visitation',
 )
