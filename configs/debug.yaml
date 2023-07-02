@@ -14,10 +14,13 @@ gamma: 0.99
 no_goal: True
 
 # Data generation parameters
-training_steps: 1000
+training_steps: 10000
 
 # Transformer training parameters
-epochs: 3
-batch_size: 100
+epochs: 800
+batch_size: 64
 lr: 0.001
-seq_len: 64
+seq_len: 32
+
+# Options
+num_options: 4

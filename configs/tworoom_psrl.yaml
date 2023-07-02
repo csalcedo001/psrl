@@ -17,7 +17,7 @@ no_goal: True
 training_steps: 1000000
 
 # Transformer training parameters
-epochs: 10
+epochs: 6
 batch_size: 100
 lr: 0.001
 seq_len: 64
