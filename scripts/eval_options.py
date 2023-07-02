@@ -82,11 +82,17 @@ agent = RandomAgent(option_env, {})
 # Evaluation loop
 trajectory = rollout(option_env, agent, exp_config, max_steps=1000, add_info=True)
 
-total_reward = 0
+total_option_reward = 0
+total_env_reward = 0
 for transition in trajectory:
-    total_reward += transition[2]
+    _, _, option_reward, _, info = transition
+    total_option_reward += transition[2]
+    for env_reward in info['rewards']:
+        total_env_reward += env_reward
 
-print("Total reward:", total_reward)
+
+print("Total option reward:", total_option_reward)
+print("Total env reward:", total_env_reward)
 
 
 
