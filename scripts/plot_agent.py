@@ -38,7 +38,8 @@ if args.goal_reward is not None:
     no_goal = args.goal_reward == 0
     
 if not no_goal:
-    exp_config.save_dir = os.path.join(exp_config.save_dir, 'regret_plot')
+    exp_config.save_path = os.path.join(exp_config.save_path, 'regret_plot')
+    exp_config.plots_path = os.path.join(exp_config.plots_path, 'regret_plot')
 
 
 
