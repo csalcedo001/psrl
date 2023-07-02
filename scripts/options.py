@@ -12,8 +12,6 @@ class OptionSet:
 
         self.pos = None
         self.sequence = None
-
-        self.reset()
     
     def reset(self, state):
         self.pos = 1
