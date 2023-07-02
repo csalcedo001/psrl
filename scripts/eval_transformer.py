@@ -11,6 +11,7 @@ from psrl.utils import env_name_map
 
 from arg_utils import get_experiment_parser
 from trajectory_dataset import TrajectoryDataset
+from metrics import compute_accuracy
 from utils import load_experiment_config, set_seed, get_file_path_from_config, get_experiment_path_from_config
 
 
@@ -99,18 +100,11 @@ accelerator.load_state(checkpoints_dir)
 
 # Evaluation loop
 model.eval()
-
-accuracies = []
 with torch.no_grad():
-    for x, y in tqdm(data_loader):
-        output = model(input_ids=x)
-        y_hat = output.logits.argmax(dim=-1)
-
-        accuracy = torch.sum(y == y_hat, axis=1).float() / (y.shape[0] * y.shape[1])
-        accuracies.append(accuracy)
+    accuracy = compute_accuracy(model, data_loader)
 
 
-print("Accuracy:", torch.mean(torch.concatenate(accuracies)))
+print("Accuracy:", accuracy)
 
 device = accelerator.device
 
