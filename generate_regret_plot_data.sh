@@ -12,6 +12,7 @@ do
         do
             screen -dmS regret_${env}_${agent}_${seed} python3 scripts/generate_data.py \
                 --seed $seed \
+                --goal-reward 1 \
                 --config configs/${env}_${agent}.yaml
         done
     done
