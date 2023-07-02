@@ -1,6 +1,6 @@
 from tqdm import tqdm
 
-def train_episode(env, agent, render=False, verbose=False, max_steps=100, pbar=None):
+def train_episode(env, agent, render=False, verbose=False, max_steps=100, pbar=None, add_info=False):
     state = env.reset()
     if render:
         env.render()
@@ -14,9 +14,11 @@ def train_episode(env, agent, render=False, verbose=False, max_steps=100, pbar=N
     while pbar.n < max_steps:
         action = agent.act(state)
 
-        next_state, reward, done, _ = env.step(action)
+        next_state, reward, done, info = env.step(action)
 
         transition = (state, action, reward, next_state)
+        if add_info:
+            transition = transition + (info,)
         trajectory.append(transition)
 
         agent.observe(transition)
@@ -44,13 +46,13 @@ def train_episode(env, agent, render=False, verbose=False, max_steps=100, pbar=N
     return trajectory
 
 
-def train(env, agent, config, render=False, verbose=False, max_steps=100):
+def train(env, agent, config, render=False, verbose=False, max_steps=100, add_info=False):
     agent_trajectories = []
 
     pbar = tqdm(total=max_steps)
 
     while pbar.n < max_steps:
-        agent_trajectory = train_episode(env, agent, render, verbose, max_steps, pbar=pbar)
+        agent_trajectory = train_episode(env, agent, render, verbose, max_steps, pbar=pbar, add_info=add_info)
         agent_trajectories += agent_trajectory
     
     return agent_trajectories

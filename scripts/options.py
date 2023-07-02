@@ -74,11 +74,16 @@ class OptionEnvWrapper:
         done = False
 
         actions = self.get_actions(option)
+        next_states = []
+        rewards = []
 
         for action in actions:
-            next_state, reward, done, info = self.env.step(action)
+            next_state, reward, done, _ = self.env.step(action)
 
             self.state = next_state
+
+            rewards.append(reward)
+            next_states.append(next_state)
 
             option_reward += reward
             option_len += 1
@@ -89,5 +94,11 @@ class OptionEnvWrapper:
                 break
         
         avg_reward = option_reward / max(option_len, 1)
+
+        info = {
+            'actions': actions,
+            'next_states': next_states,
+            'rewards': rewards,
+        }
         
         return self.state, avg_reward, done, info
