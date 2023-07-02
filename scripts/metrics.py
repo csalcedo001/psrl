@@ -19,12 +19,8 @@ def compute_last_action_accuracy(model, data_loader):
         x = y.clone().detach()
         x[:, -1] = data_loader.dataset.missing_token
 
-        print(x, y)
-
         output = model(input_ids=x)
         y_hat = output.logits.argmax(dim=-1)
-
-        print(y_hat)
 
         batch_hits = torch.sum(y[:, -1] == y_hat[:, -1])
         hits += batch_hits
