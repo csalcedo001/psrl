@@ -3,6 +3,7 @@ import torch
 from torch.utils.data import DataLoader
 from transformers import GPT2Config, GPT2LMHeadModel
 import pickle
+import json
 from tqdm import tqdm
 from accelerate import Accelerator
 
@@ -95,6 +96,7 @@ with torch.no_grad():
     last_action_accuracy = compute_last_action_accuracy(model, data_loader)
 
 
+
 print("Raw accuracy:", raw_accuracy)
 print("Last action accuracy:", last_action_accuracy)
 
@@ -118,3 +120,15 @@ print()
 print("y:")
 print(y.cpu().numpy()[-10:, -20:])
 print()
+
+
+
+# Save results
+eval_metrics = {
+    'raw_accuracy': raw_accuracy,
+    'last_action_accuracy': last_action_accuracy,
+}
+
+eval_metrics_path = get_file_path_from_config('eval_metrics.json', exp_config, root_type='plots')
+with open(eval_metrics_path, 'w') as f:
+    json.dump(eval_metrics, f, indent=4)
