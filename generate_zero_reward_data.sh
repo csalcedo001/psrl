@@ -1,6 +1,6 @@
 #!/bin/bash
 
-envs=(tworoom fourroom)
+envs=(riverswim tworoom fourroom)
 agents=(psrl ucrl2 klucrl)
 seeds=(0 1 2)
 
@@ -12,7 +12,7 @@ do
         do
             screen -dmS regret_${env}_${agent}_${seed} python3 scripts/generate_data.py \
                 --seed $seed \
-                --goal-reward 1 \
+                --goal-reward 0 \
                 --config configs/${env}_${agent}.yaml
         done
     done
