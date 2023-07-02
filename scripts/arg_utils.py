@@ -71,6 +71,6 @@ def get_experiment_parser():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--config', type=str, default=None, help='Path to experiment configuration file', required=True)
-    # parser.add_argument('--seed', type=int, default=None, help='Random seed')
+    parser.add_argument('--seed', type=int, default=None, help='Random seed')
 
     return parser

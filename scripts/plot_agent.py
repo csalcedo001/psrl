@@ -27,8 +27,11 @@ exp_config = load_experiment_config(config_path)
 
 
 # Setup experiment
-set_seed(exp_config.seed)
-print("*** SEED:", exp_config.seed)
+seed = exp_config.seed
+if args.seed is not None:
+    seed = args.seed
+set_seed(seed)
+print("*** SEED:", seed)
 
 
 
@@ -51,7 +54,7 @@ agent.load(agent_path)
 
 
 # Get data from agent
-if exp_config.agent == 'ucrl2':
+if exp_config.agent in ['ucrl2', 'kl_ucrl']:
     p_hat = agent.Pk / np.clip(agent.Pk.sum(axis=2, keepdims=True), 1, None) + np.expand_dims(agent.p_distances, axis=2)
     r_hat = agent.Rk / np.clip(agent.Nk, 1, None) + agent.r_distances
     p_count = agent.Pk

@@ -17,8 +17,11 @@ exp_config = load_experiment_config(config_path)
 
 
 # Setup experiment
-set_seed(exp_config.seed)
-print("*** SEED:", exp_config.seed)
+seed = exp_config.seed
+if args.seed is not None:
+    seed = args.seed
+set_seed(seed)
+print("*** SEED:", seed)
 
 
 
