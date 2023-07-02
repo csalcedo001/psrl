@@ -302,3 +302,17 @@ def save_losses_plot(losses, file_path, title=None):
 
     plt.savefig(file_path)
     plt.close(fig)
+
+def save_accuracy_plot(accuracies, file_path, title=None):
+    print("Processing accuracy plot...")
+
+    fig, ax = plt.subplots()
+    plt.title(title)
+    plt.xlabel("Epochs")
+    plt.ylabel("Accuracy")
+
+    x = np.arange(len(accuracies)) * 10
+    ax.plot(accuracies)
+
+    plt.savefig(file_path)
+    plt.close(fig)

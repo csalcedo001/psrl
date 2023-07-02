@@ -12,6 +12,7 @@ from psrl.utils import env_name_map
 
 from arg_utils import get_experiment_parser
 from trajectory_dataset import TrajectoryDataset
+from metrics import compute_raw_accuracy, compute_last_action_accuracy
 from utils import load_experiment_config, set_seed, get_file_path_from_config, get_experiment_path_from_config
 
 
@@ -88,17 +89,21 @@ model_config.n_positions = exp_config.seq_len
 model_config.n_ctx = exp_config.seq_len
 
 model = GPT2LMHeadModel(model_config)
-model.train()
 
 
 
 # Training
+model.train()
 optimizer = torch.optim.Adam(model.parameters(), lr=exp_config.lr)
 criterion = torch.nn.CrossEntropyLoss()
 
 model, optimizer, data_loader = accelerator.prepare(model, optimizer, data_loader)
 
-losses = []
+metrics = {
+    'loss': [],
+    'raw_accuracy': [],
+    'last_action_accuracy': [],
+}
 
 print("Starting training...")
 for epoch in range(exp_config.epochs):
@@ -115,7 +120,7 @@ for epoch in range(exp_config.epochs):
         optimizer.step()
         optimizer.zero_grad()
 
-        losses.append(loss.item())
+        metrics['loss'].append(loss.item())
 
         pbar.update(1)
         pbar.set_description(f"[{epoch}/{exp_config.epochs}] Loss: {loss.item():.4f}")
@@ -123,6 +128,16 @@ for epoch in range(exp_config.epochs):
     if epoch % 10 == 0:
         checkpoints_dir = get_file_path_from_config('checkpoints', exp_config)
         accelerator.save_state(checkpoints_dir)
+
+        model.eval()
+        with torch.no_grad():
+            raw_accuracy = compute_raw_accuracy(model, data_loader)
+            last_action_accuracy = compute_last_action_accuracy(model, data_loader)
+
+            metrics['raw_accuracy'].append(raw_accuracy)
+            metrics['last_action_accuracy'].append(last_action_accuracy)
+        
+        model.train()
 
 
 
@@ -154,6 +169,6 @@ print()
 model_path = get_file_path_from_config('model.pt', exp_config, mkdir=True)
 torch.save(model.state_dict(), model_path)
 
-losses_path = get_file_path_from_config('losses.pkl', exp_config, mkdir=True)
-with open(losses_path, 'wb') as f:
-    pickle.dump(losses, f)
+metrics_path = get_file_path_from_config('metrics.pkl', exp_config, mkdir=True)
+with open(metrics_path, 'wb') as f:
+    pickle.dump(metrics, f)

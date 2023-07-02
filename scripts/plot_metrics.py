@@ -1,7 +1,7 @@
 import os
 import pickle
 
-from plotting import save_losses_plot
+from plotting import save_losses_plot, save_accuracy_plot
 from arg_utils import get_experiment_parser
 from utils import load_experiment_config, set_seed, get_file_path_from_config
 
@@ -34,16 +34,26 @@ if not no_goal:
 
 
 # Get losses data
-losses_path = get_file_path_from_config('losses.pkl', exp_config)
-with open(losses_path, 'rb') as f:
-    losses = pickle.load(f)
+metrics_path = get_file_path_from_config('metrics.pkl', exp_config)
+with open(metrics_path, 'rb') as f:
+    metrics = pickle.load(f)
 
 
 
 # Save plots
 print('Saving plots...')
 save_losses_plot(
-    losses,
-    get_file_path_from_config('training_loss.png', exp_config, root_type='plots'),
+    metrics['loss'],
+    get_file_path_from_config('training_loss.png', exp_config, mkdir=True, root_type='plots'),
     title='Training Loss',
+)
+save_accuracy_plot(
+    metrics['raw_accuracy'],
+    get_file_path_from_config('training_raw_accuracy.png', exp_config, root_type='plots'),
+    title='Raw Accuracy',
+)
+save_accuracy_plot(
+    metrics['last_action_accuracy'],
+    get_file_path_from_config('training_last_action_accuracy.png', exp_config, root_type='plots'),
+    title='Last Action Accuracy',
 )

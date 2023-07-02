@@ -9,9 +9,10 @@ def compute_raw_accuracy(model, data_loader):
 
         accuracy = torch.sum(y == y_hat, axis=1).float() / (y.shape[0] * y.shape[1])
         accuracies.append(accuracy)
+    
     accuracy = torch.mean(torch.concatenate(accuracies))
 
-    return accuracy
+    return accuracy.item()
 
 def compute_last_action_accuracy(model, data_loader):
     hits = 0
@@ -28,4 +29,4 @@ def compute_last_action_accuracy(model, data_loader):
     hits_and_misses = len(data_loader.dataset)
     accuracy = hits / hits_and_misses
 
-    return accuracy
+    return accuracy.item()
