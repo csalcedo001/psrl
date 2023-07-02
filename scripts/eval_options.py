@@ -90,7 +90,7 @@ agent = RandomAgent(option_env, {})
 
 
 # Evaluation loop
-trajectory = rollout(env, agent, exp_config, max_steps=100000)
+trajectory = rollout(option_env, agent, exp_config, max_steps=1000, add_info=True)
 
 total_reward = 0
 for transition in trajectory:

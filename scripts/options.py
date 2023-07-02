@@ -12,6 +12,8 @@ class OptionSet:
 
         self.pos = None
         self.sequence = None
+
+        self.model.eval()
     
     def reset(self, state):
         self.pos = 1
@@ -20,14 +22,15 @@ class OptionSet:
     
     def get_actions(self, option):
         num_actions = self.seq_len // 2
-        missing_actions = option / max(self.num_options - 1, 1) * (num_actions - 2) + 1
+        missing_actions = int(option / max(self.num_options - 1, 1) * (num_actions - 2) + 1)
         missing_s_and_a = 2 * missing_actions - 1
 
-        sequence = torch.LongTensor(self.sequence)
-        sequence[-missing_s_and_a:] = self.missing_token
+        with torch.no_grad():
+            sequence = torch.LongTensor(self.sequence).to(self.model.device)
+            sequence[-missing_s_and_a:] = self.missing_token
 
-        output = self.model(sequence.view(1, -1))
-        next_sequence = output.logits.argmax(dim=-1)[0].cpu().numpy()
+            output = self.model(sequence.view(1, -1))
+            next_sequence = output.logits.argmax(dim=-1)[0].detach().cpu().numpy()
 
         action_idxs = np.arange(missing_actions) * 2 + self.seq_len - missing_s_and_a
         actions = next_sequence[action_idxs]
@@ -47,7 +50,7 @@ class OptionSet:
             self.sequence[self.pos] = action
             self.sequence[self.pos + 1] = state
 
-        self.pos = max(self.pos + 2, self.seq_len - 1)
+        self.pos = min(self.pos + 2, self.seq_len - 1)
 
 
 class OptionEnvWrapper:
@@ -73,7 +76,7 @@ class OptionEnvWrapper:
         option_len = 0
         done = False
 
-        actions = self.get_actions(option)
+        actions = self.option_set.get_actions(option)
         next_states = []
         rewards = []
 
