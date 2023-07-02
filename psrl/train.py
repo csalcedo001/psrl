@@ -39,6 +39,8 @@ def train_episode(env, agent, render=False, verbose=False, max_steps=100, pbar=N
             
         state = next_state
     
+    pbar.close()
+    
     return trajectory
 
 
