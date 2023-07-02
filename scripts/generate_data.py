@@ -27,6 +27,12 @@ if args.seed is not None:
 set_seed(seed)
 print("*** SEED:", seed)
 
+no_goal = exp_config.no_goal
+if args.goal_reward is not None:
+    no_goal = args.goal_reward == 0
+    
+if not no_goal:
+    exp_config.save_dir = os.path.join(exp_config.save_dir, 'regret_plot')
 
 
 
@@ -34,7 +40,7 @@ print("*** SEED:", seed)
 env_class = env_name_map[exp_config.env]
 env_config = get_env_config(exp_config.env)
 env_config['gamma'] = exp_config.gamma
-env_config['no_goal'] = exp_config.no_goal
+env_config['no_goal'] = no_goal
 env = env_class(env_config)
 
 

@@ -72,5 +72,6 @@ def get_experiment_parser():
 
     parser.add_argument('--config', type=str, default=None, help='Path to experiment configuration file', required=True)
     parser.add_argument('--seed', type=int, default=None, help='Random seed')
+    parser.add_argument('--goal-reward', type=int, default=None, help='Reward for achieving goal')
 
     return parser

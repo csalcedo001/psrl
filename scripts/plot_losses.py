@@ -1,4 +1,4 @@
-import numpy as np
+import os
 import pickle
 
 from plotting import save_losses_plot
@@ -22,6 +22,13 @@ if args.seed is not None:
     seed = args.seed
 set_seed(seed)
 print("*** SEED:", seed)
+
+no_goal = exp_config.no_goal
+if args.goal_reward is not None:
+    no_goal = args.goal_reward == 0
+    
+if not no_goal:
+    exp_config.save_dir = os.path.join(exp_config.save_dir, 'regret_plot')
 
 
 
