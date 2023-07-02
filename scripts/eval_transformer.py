@@ -74,8 +74,10 @@ data_loader = DataLoader(
     trajectory_dataset,
     batch_size=exp_config.batch_size,
     shuffle=True,
-    drop_last=True,
 )
+
+data_loader = accelerator.prepare(data_loader)
+
 
 
 
@@ -87,45 +89,29 @@ model_config.n_positions = exp_config.seq_len
 model_config.n_ctx = exp_config.seq_len
 
 model = GPT2LMHeadModel(model_config)
-model.train()
+
+checkpoints_dir = get_file_path_from_config('checkpoints', exp_config)
+model = accelerator.prepare(model)
+accelerator.load_state(checkpoints_dir)
 
 
 
-# Training
-optimizer = torch.optim.Adam(model.parameters(), lr=exp_config.lr)
-criterion = torch.nn.CrossEntropyLoss()
 
-model, optimizer, data_loader = accelerator.prepare(model, optimizer, data_loader)
+# Evaluation loop
+model.eval()
 
-losses = []
-
-print("Starting training...")
-for epoch in range(exp_config.epochs):
-    pbar = tqdm(total=len(data_loader))
-    for batch in data_loader:
-        x, y = batch
-        
+accuracies = []
+with torch.no_grad():
+    for x, y in tqdm(data_loader):
         output = model(input_ids=x)
-        y_hat = output.logits.view(-1, vocab_size)
-        loss = criterion(y_hat, y.view(-1))
+        y_hat = output.logits.argmax(dim=-1)
 
-        accelerator.backward(loss)
-
-        optimizer.step()
-        optimizer.zero_grad()
-
-        losses.append(loss.item())
-
-        pbar.update(1)
-        pbar.set_description(f"[{epoch}/{exp_config.epochs}] Loss: {loss.item():.4f}")
-    
-    if epoch % 10 == 0:
-        checkpoints_dir = get_file_path_from_config('checkpoints', exp_config)
-        accelerator.save_state(checkpoints_dir)
+        accuracy = torch.sum(y == y_hat, axis=1).float() / (y.shape[0] * y.shape[1])
+        accuracies.append(accuracy)
 
 
+print("Accuracy:", torch.mean(torch.concatenate(accuracies)))
 
-# Evaluation after training
 device = accelerator.device
 
 x, y = next(iter(data_loader))
@@ -146,13 +132,3 @@ print()
 print("y:")
 print(y.cpu().numpy()[-10:, -20:])
 print()
-
-
-
-# Save results
-model_path = get_file_path_from_config('model.pt', exp_config, mkdir=True)
-torch.save(model.state_dict(), model_path)
-
-losses_path = get_file_path_from_config('losses.pkl', exp_config, mkdir=True)
-with open(losses_path, 'wb') as f:
-    pickle.dump(losses, f)
