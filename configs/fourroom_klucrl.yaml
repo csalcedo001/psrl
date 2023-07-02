@@ -21,3 +21,6 @@ epochs: 6
 batch_size: 80
 lr: 0.001
 seq_len: 64
+
+# Options
+num_options: 4
