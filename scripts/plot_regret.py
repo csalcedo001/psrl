@@ -58,14 +58,14 @@ for agent in agents:
         oracle_env = copy.deepcopy(env)
         oracle_config = get_agent_config('optimal')
         oracle = OptimalAgent(oracle_env, oracle_config)
-        oracle_trajectories = rollout(oracle_env, oracle, exp_config, max_steps=exp_config.training_steps)
+        oracle_trajectories = rollout(oracle_env, oracle, exp_config, max_steps=exp_config.plot_steps)
 
 
 
         # Load agent trajectories
         agent_trajectories_path = get_file_path_from_config('trajectories.pkl', exp_config)
         with open(agent_trajectories_path, 'rb') as f:
-            agent_trajectories = pickle.load(f)
+            agent_trajectories = pickle.load(f)[:exp_config.plot_steps]
         
 
 
@@ -75,7 +75,7 @@ for agent in agents:
 
         regrets = []
         regret = 0
-        for t in range(exp_config.training_steps):
+        for t in range(exp_config.plot_steps):
             regret += oracle_rewards[t] - agent_rewards[t]
             regrets.append(regret)
 
@@ -85,7 +85,7 @@ for agent in agents:
 # Plot regret
 filename = 'regret.png'
 root = exp_config.plots_path
-experiment_dir = '{env}_{training_steps}'.format(**exp_config)
+experiment_dir = '{env}_{plot_steps}'.format(**exp_config)
 file_dir = os.path.join(root, experiment_dir)
 os.makedirs(file_dir, exist_ok=True)
 

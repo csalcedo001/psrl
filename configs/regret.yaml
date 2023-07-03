@@ -1,7 +1,7 @@
 # Description: Configuration file for the experiment
 
 # Data parameters
-save_path: '/data/csalcedo/psrl/data'
+save_path: 'data'
 plots_path: 'plots'
 
 # Setup parameters
@@ -14,3 +14,6 @@ no_goal: False
 
 # Data generation parameters
 training_steps: 1000000
+
+# Plot parameters
+plot_steps: 100000
