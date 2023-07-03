@@ -1,0 +1,5 @@
+# Description: Configuration file for the experiment
+
+# Data parameters
+save_path: '/data/csalcedo/psrl/data'
+plots_path: 'plots'

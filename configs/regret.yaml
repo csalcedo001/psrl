@@ -1,0 +1,16 @@
+# Description: Configuration file for the experiment
+
+# Data parameters
+save_path: '/data/csalcedo/psrl/data'
+plots_path: 'plots'
+
+# Setup parameters
+seed: 0
+
+# Environment and agent parameters
+env: tworoom
+gamma: 0.99
+no_goal: False
+
+# Data generation parameters
+training_steps: 1000000

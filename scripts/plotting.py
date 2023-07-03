@@ -3,6 +3,22 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 
+env_plot_name_map = {
+    'riverswim': 'RiverSwim',
+    'randommdp': 'RandomMDP',
+    'tworoom': 'TwoRoom',
+    'fourroom': 'FourRoom',
+    'gridworld': 'GridWorld',
+}
+agent_plot_name_map = {
+    'psrl': 'PSRL',
+    'ucrl2': 'UCRL2',
+    'kl_ucrl': 'KL-UCRL',
+    'random_agent': 'Random',
+    'optimal': 'Optimal',
+}
+
+
 def choose_gridworld_color(symbol):
     if symbol == ' ':
         color = 'w'
@@ -59,6 +75,17 @@ def add_cell_divisions_to_grid(ax, env):
     for x0, y0, x1, y1 in horizontal:
         plt.plot([x0, x1], [y0, y1], 'k', linewidth=0.5)
 
+def save_gridworld_plot(env, env_name, file_path):
+    print("Processing gridworld plot...")
+
+    fig, ax = plt.subplots()
+    plt.title(f'{env_plot_name_map[env_name]} Environment')
+
+    init_plt_grid(ax, env)
+    add_cell_divisions_to_grid(ax, env)
+
+    plt.savefig(file_path)
+    plt.close(fig)
 
 def save_policy_plot(env, agent, file_path, title=None):
     print("Processing policy plot...")
@@ -313,6 +340,32 @@ def save_accuracy_plot(accuracies, file_path, title=None):
 
     x = np.arange(len(accuracies)) * 10
     ax.plot(accuracies)
+
+    plt.savefig(file_path)
+    plt.close(fig)
+
+def save_regret_plot(agent_trajectories, file_path, title=None):
+    print("Processing regret plot...")
+
+    fig, ax = plt.subplots()
+    plt.title(title)
+    plt.xlabel("Steps")
+    plt.ylabel("Regret")
+
+    cmap = mpl.colormaps['tab10']
+    for i, agent in enumerate(agent_trajectories):
+        mean_regret = np.mean(agent_trajectories[agent], axis=0)
+        min_regret = np.min(agent_trajectories[agent], axis=0)
+        max_regret = np.max(agent_trajectories[agent], axis=0)
+
+        x_index = np.arange(len(mean_regret))
+
+        c = cmap(i % 10)
+
+        ax.fill_between(x_index, min_regret, max_regret, alpha=0.5, color=c)
+        ax.plot(x_index, mean_regret, label=agent_plot_name_map[agent], color=c)
+
+    plt.legend()
 
     plt.savefig(file_path)
     plt.close(fig)
