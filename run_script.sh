@@ -41,7 +41,7 @@ if [ -f "$script" ]; then
     echo "Running $script with env=$env, agent=$agent, seed=$seed"
 
     screen -dmS ${script_name}_${env}_${agent}_${seed} \
-        python3 $script_name \
+        python3 $script \
             --seed $seed \
             --config configs/${env}_${agent}.yaml
 else
