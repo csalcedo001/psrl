@@ -1,8 +1,8 @@
 #!/bin/bash
 
-envs=(riverswim tworoom fourroom)
+envs=(tworoom fourroom)
 agents=(psrl ucrl2 klucrl)
-seeds=(0 1 2)
+seeds=(0)
 
 for env in "${envs[@]}"
 do

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-envs=(tworoom fourroom)
+envs=(riverswim tworoom fourroom)
 agents=(psrl ucrl2 klucrl)
 seeds=(0 1 2)
 
