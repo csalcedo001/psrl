@@ -344,7 +344,7 @@ def save_accuracy_plot(accuracies, file_path, title=None):
     plt.savefig(file_path)
     plt.close(fig)
 
-def save_regret_plot(agent_trajectories, file_path, title=None):
+def save_regret_plot(agent_regrets, file_path, title=None):
     print("Processing regret plot...")
 
     fig, ax = plt.subplots()
@@ -353,10 +353,12 @@ def save_regret_plot(agent_trajectories, file_path, title=None):
     plt.ylabel("Regret")
 
     cmap = mpl.colormaps['tab10']
-    for i, agent in enumerate(agent_trajectories):
-        mean_regret = np.mean(agent_trajectories[agent], axis=0)
-        min_regret = np.min(agent_trajectories[agent], axis=0)
-        max_regret = np.max(agent_trajectories[agent], axis=0)
+    for i, agent in enumerate(agent_regrets):
+        regrets = np.array(agent_regrets[agent])
+        
+        mean_regret = np.mean(regrets, axis=0)
+        min_regret = np.min(regrets, axis=0)
+        max_regret = np.max(regrets, axis=0)
 
         x_index = np.arange(len(mean_regret))
 

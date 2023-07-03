@@ -41,20 +41,14 @@ env = env_class(env_config)
 
 
 
-
-
-
-
 # Get agent data
 agents = ['psrl', 'ucrl2', 'kl_ucrl']
 
-agent_regrets = {
-    'psrl': [],
-    'ucrl2': [],
-    'kl_ucrl': []
-}
+agent_regrets = {}
 for agent in agents:
     exp_config.agent = agent
+
+    agent_regrets[agent] = []
 
     for seed in range(3):
         exp_config.seed = seed
@@ -86,19 +80,19 @@ for agent in agents:
             regrets.append(regret)
 
         
-        agent_regrets[agent].append(regret)
-
-
+        agent_regrets[agent].append(regrets)
 
 # Plot regret
 filename = 'regret.png'
 root = exp_config.plots_path
 experiment_dir = '{env}_{training_steps}'.format(**exp_config)
+file_dir = os.path.join(root, experiment_dir)
+os.makedirs(file_dir, exist_ok=True)
 
-file_path = os.path.join(root, experiment_dir, filename)
+file_path = os.path.join(file_dir, filename)
 
 save_regret_plot(
-    agent_trajectories,
+    agent_regrets,
     file_path,
     title='Exploration Regret',
 )
