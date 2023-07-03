@@ -1,36 +1,40 @@
 #!/bin/bash
 
-script=$1
+script_name=$1
 env=$2
 agent=$3
 seed=$4
 
-if [ -z "$script" ]
+if [ -z "$script_name" ]
 then
-    echo "script is empty"
-    exit 1
+    script_name="generate_data"
 fi
 
 if [ -z "$env" ]
 then
-    echo "env is empty"
-    exit 1
+    env="tworoom"
 fi
 
 if [ -z "$agent" ]
 then
-    echo "agent is empty"
-    exit 1
+    agent="ucrl2"
 fi
 
 if [ -z "$seed" ]
 then
-    echo "seed is empty"
-    exit 1
+    seed="0"
 fi
 
+script="scripts/$script_name.py"
 
-screen -dmS ${script}_${env}_${agent}_${seed} \
-    python3 scripts/$script.py \
-        --seed $seed \
-        --config configs/${env}_${agent}.yaml
+
+if [ -f "$script" ]; then
+    echo "Running $script with env=$env, agent=$agent, seed=$seed"
+
+    screen -dmS ${script_name}_${env}_${agent}_${seed} \
+        python3 $script_name \
+            --seed $seed \
+            --config configs/${env}_${agent}.yaml
+else
+    echo "Script $script does not exist"
+fi
