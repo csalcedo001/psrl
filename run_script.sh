@@ -1,10 +1,16 @@
 #!/bin/bash
 
+
+
+# Get CLI arguments
 script_name=$1
 env=$2
 agent=$3
 seed=$4
 
+
+
+# Validate arguments
 if [ -z "$script_name" ]
 then
     script_name="generate_data"
@@ -25,10 +31,13 @@ then
     seed="0"
 fi
 
+
+
 script="scripts/$script_name.py"
 
-
 if [ -f "$script" ]; then
+    # Run script
+    
     echo "Running $script with env=$env, agent=$agent, seed=$seed"
 
     screen -dmS ${script_name}_${env}_${agent}_${seed} \
