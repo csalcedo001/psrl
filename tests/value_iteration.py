@@ -153,29 +153,24 @@ class TestInnerMaximization(TestCase):
 
 
 
-policy_evaluation_parameters = [
+disc_policy_evaluation_parameters = [
     (name, pi, gamma)
     for name in grids_and_policies
     for pi in grids_and_policies[name]['optimal_policies']
     for gamma in [1.0, 0.9]
 ]
-avg_rew_policy_evaluation_parameters = [
-    (name, pi)
-    for name in ['simple']
-    for pi in grids_and_policies[name]['optimal_policies']
-]
-value_iteration_parameters = [
+disc_value_iteration_parameters = [
     (name, gamma)
     for name in grids_and_policies
     for gamma in [1.0, 0.9]
 ]
 
-class TestValueIteration(TestCase):
+class TestDiscountedValueIteration(TestCase):
     epsilon = 1e-3      # Threshold of absolute maximum difference
     max_iter = 1000     # Maximum number of iterations
 
     
-    @parameterized.expand(policy_evaluation_parameters)
+    @parameterized.expand(disc_policy_evaluation_parameters)
     def test_policy_evaluation(self, name, pi, gamma):
         env_config = get_env_config('gridworld')
         env_config.grid = grids_and_policies[name]['grid']
@@ -197,6 +192,81 @@ class TestValueIteration(TestCase):
 
         diff = np.abs(v_hat - v).max()
         self.assertTrue(diff < 2 * self.epsilon, msg=(diff, self.epsilon))
+
+    
+    @parameterized.expand(disc_value_iteration_parameters)
+    def test_value_iteration_value_function(self, name, gamma):
+        env_config = get_env_config('gridworld')
+        env_config.grid = grids_and_policies[name]['grid']
+        env = GridworldEnv(env_config)
+
+        p, r = env.get_p_and_r()
+
+        args = {
+            'p': p,
+            'r': r,
+            'gamma': gamma,
+            'epsilon': self.epsilon,
+            'max_iter': self.max_iter
+        }
+
+        # Get an optimal policy and compute its value function
+        pi = grids_and_policies[name]['optimal_policies'][0]
+        v = brute_force_policy_evaluation(pi=pi, **args)
+
+
+        # Make sure the value function returned direction from value iteration
+        # is the same as the one obtained by the optimal policy through
+        # policy evaluation
+        _, q_hat = agents.utils.value_iteration(**args)
+        v_hat = q_hat.max(axis=1)
+
+        diff = np.abs(v_hat - v).max()
+        self.assertTrue(diff < 2 * self.epsilon, msg=(diff, self.epsilon))
+
+
+    
+    @parameterized.expand(disc_value_iteration_parameters)
+    def test_value_iteration_policy(self, name, gamma):
+        env_config = get_env_config('gridworld')
+        env_config.grid = grids_and_policies[name]['grid']
+        env = GridworldEnv(env_config)
+
+        p, r = env.get_p_and_r()
+
+        args = {
+            'p': p,
+            'r': r,
+            'gamma': gamma,
+            'epsilon': self.epsilon,
+            'max_iter': self.max_iter
+        }
+
+        # Get an optimal policy and compute its value function
+        pi = grids_and_policies[name]['optimal_policies'][0]
+        v = brute_force_policy_evaluation(pi=pi, **args)
+
+
+        # Make sure that the policy returned by policy iteration results in
+        # the same value function as the one obtained by policy iteration
+        # on the optimal policy
+        pi_hat, _ = agents.utils.value_iteration(**args)
+        v_hat = brute_force_policy_evaluation(pi=pi_hat, **args)
+
+        diff = np.abs(v_hat - v).max()
+        self.assertTrue(diff < 2 * self.epsilon, msg=(diff, self.epsilon))
+
+
+
+avg_rew_policy_evaluation_parameters = [
+    (name, pi)
+    for name in ['simple']
+    for pi in grids_and_policies[name]['optimal_policies']
+]
+
+class TestAverageRewardValueIteration(TestCase):
+    epsilon = 1e-3      # Threshold of absolute maximum difference
+    max_iter = 1000     # Maximum number of iterations
     
     @parameterized.expand(avg_rew_policy_evaluation_parameters)
     def test_stationary_matrix(self, name, pi):
@@ -271,69 +341,6 @@ class TestValueIteration(TestCase):
         avg_r_hat = agents.utils.get_policy_average_reward(p, r, pi)
 
         self.assertRoundEqual(avg_r_hat, avg_r)
-
-    
-    @parameterized.expand(value_iteration_parameters)
-    def test_value_iteration_value_function(self, name, gamma):
-        env_config = get_env_config('gridworld')
-        env_config.grid = grids_and_policies[name]['grid']
-        env = GridworldEnv(env_config)
-
-        p, r = env.get_p_and_r()
-
-        args = {
-            'p': p,
-            'r': r,
-            'gamma': gamma,
-            'epsilon': self.epsilon,
-            'max_iter': self.max_iter
-        }
-
-        # Get an optimal policy and compute its value function
-        pi = grids_and_policies[name]['optimal_policies'][0]
-        v = brute_force_policy_evaluation(pi=pi, **args)
-
-
-        # Make sure the value function returned direction from value iteration
-        # is the same as the one obtained by the optimal policy through
-        # policy evaluation
-        _, q_hat = agents.utils.value_iteration(**args)
-        v_hat = q_hat.max(axis=1)
-
-        diff = np.abs(v_hat - v).max()
-        self.assertTrue(diff < 2 * self.epsilon, msg=(diff, self.epsilon))
-
-
-    
-    @parameterized.expand(value_iteration_parameters)
-    def test_value_iteration_policy(self, name, gamma):
-        env_config = get_env_config('gridworld')
-        env_config.grid = grids_and_policies[name]['grid']
-        env = GridworldEnv(env_config)
-
-        p, r = env.get_p_and_r()
-
-        args = {
-            'p': p,
-            'r': r,
-            'gamma': gamma,
-            'epsilon': self.epsilon,
-            'max_iter': self.max_iter
-        }
-
-        # Get an optimal policy and compute its value function
-        pi = grids_and_policies[name]['optimal_policies'][0]
-        v = brute_force_policy_evaluation(pi=pi, **args)
-
-
-        # Make sure that the policy returned by policy iteration results in
-        # the same value function as the one obtained by policy iteration
-        # on the optimal policy
-        pi_hat, _ = agents.utils.value_iteration(**args)
-        v_hat = brute_force_policy_evaluation(pi=pi_hat, **args)
-
-        diff = np.abs(v_hat - v).max()
-        self.assertTrue(diff < 2 * self.epsilon, msg=(diff, self.epsilon))
 
 
 
