@@ -34,7 +34,9 @@ from value_iteration_utils import (
     brute_force_policy_evaluation,
     brute_force_policy_average_reward,
     brute_force_steady_state_distribution,
-    grids_and_policies
+    stationary_transition_matrix,
+    average_reward_policy_evaluation,
+    grids_and_policies,
 )
 
 
@@ -157,6 +159,11 @@ policy_evaluation_parameters = [
     for pi in grids_and_policies[name]['optimal_policies']
     for gamma in [1.0, 0.9]
 ]
+avg_rew_policy_evaluation_parameters = [
+    (name, pi)
+    for name in ['simple']
+    for pi in grids_and_policies[name]['optimal_policies']
+]
 value_iteration_parameters = [
     (name, gamma)
     for name in grids_and_policies
@@ -165,7 +172,7 @@ value_iteration_parameters = [
 
 class TestValueIteration(TestCase):
     epsilon = 1e-3      # Threshold of absolute maximum difference
-    max_iter = 100      # Maximum number of iterations
+    max_iter = 1000     # Maximum number of iterations
 
     
     @parameterized.expand(policy_evaluation_parameters)
@@ -190,6 +197,48 @@ class TestValueIteration(TestCase):
 
         diff = np.abs(v_hat - v).max()
         self.assertTrue(diff < 2 * self.epsilon, msg=(diff, self.epsilon))
+    
+    @parameterized.expand(avg_rew_policy_evaluation_parameters)
+    def test_stationary_matrix(self, name, pi):
+        env_config = get_env_config('gridworld')
+        env_config.grid = grids_and_policies[name]['grid']
+        env = GridworldEnv(env_config)
+
+        p, r = env.get_p_and_r()
+        P_pi = np.einsum('ijk,ij->ik', p, pi)
+        P_pi_star = stationary_transition_matrix(P_pi, epsilon=self.epsilon, max_iter=self.max_iter)
+
+        P_pi_star_ = P_pi_star @ P_pi
+
+        self.assertNumpyEqual(P_pi_star_, P_pi_star)
+
+    
+    @parameterized.expand(avg_rew_policy_evaluation_parameters)
+    def test_average_reward_policy_evaluation(self, name, pi_star):
+        env_config = get_env_config('gridworld')
+        env_config.grid = grids_and_policies[name]['grid']
+        env = GridworldEnv(env_config)
+
+        p, r = env.get_p_and_r()
+        v_pi_star = average_reward_policy_evaluation(p, r, pi_star, epsilon=self.epsilon, max_iter=self.max_iter)
+
+        n_s, n_a = p.shape[:2]
+
+        # Total of |A| ^ |S| greedy policies, test feasible only on small MDPs
+        all_policies = np.array(np.meshgrid(*np.tile(np.arange(n_a), (n_s, 1)))).T.reshape(-1, n_s)
+
+        for pi_idx in all_policies:
+            pi = np.zeros((n_s, n_a))
+            pi[np.arange(n_s), pi_idx] = 1
+            v_pi = average_reward_policy_evaluation(p, r, pi, epsilon=self.epsilon, max_iter=self.max_iter)
+
+            self.assertTrue(np.all(v_pi_star - v_pi > 0), msg=({
+                'v_pi_star': v_pi_star,
+                'v_pi': v_pi,
+                'pi_star': pi_star,
+                'pi': pi
+            }))
+
 
         
     @parameterized.expand([(name,) for name in grids_and_policies])

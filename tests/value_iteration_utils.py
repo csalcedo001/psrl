@@ -88,10 +88,37 @@ def brute_force_steady_state_distribution(p, pi, epsilon=1e-2, max_iter=100):
     
     return mu_pi
 
+def stationary_transition_matrix(P_pi, epsilon, max_iter):
+    n_s = P_pi.shape[0]
 
+    P_pi_prod = np.eye(n_s, n_s)
+    P_pi_sum = np.zeros((n_s, n_s))
+    P_pi_star = np.zeros((n_s, n_s))
+
+    for n in range(1, max_iter):
+        P_pi_prod = np.dot(P_pi_prod, P_pi)
+        P_pi_sum += P_pi_prod
+        P_pi_star_ = P_pi_sum / n
+
+        if np.abs(P_pi_star_ - P_pi_star).max() < epsilon:
+            break
+            
+        P_pi_star = P_pi_star_
+    
+    return P_pi_star
+
+def average_reward_policy_evaluation(p, r, pi, epsilon, max_iter):
+    P_pi = np.einsum('ijk,ij->ik', p, pi)
+    R_pi = np.einsum('ij,ij->i', r, pi)
+
+    P_pi_star = stationary_transition_matrix(P_pi, epsilon, max_iter)
+
+    v_pi_star = (np.linalg.inv(np.eye(len(P_pi_star)) - P_pi + P_pi_star) - P_pi_star) @ R_pi
+
+    return v_pi_star
 
 grids_and_policies = {
-    "square": {
+    "simple": {
         "grid": [
             ['S', 'G']
         ],
