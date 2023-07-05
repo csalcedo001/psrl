@@ -36,6 +36,7 @@ from value_iteration_utils import (
     brute_force_steady_state_distribution,
     stationary_transition_matrix,
     average_reward_policy_evaluation,
+    compute_gain,
     grids_and_policies,
 )
 
@@ -260,7 +261,7 @@ class TestDiscountedValueIteration(TestCase):
 
 avg_rew_policy_evaluation_parameters = [
     (name, pi)
-    for name in ['simple']
+    for name in grids_and_policies
     for pi in grids_and_policies[name]['optimal_policies']
 ]
 
@@ -281,6 +282,46 @@ class TestAverageRewardValueIteration(TestCase):
         P_pi_star_ = P_pi_star @ P_pi
 
         self.assertNumpyEqual(P_pi_star_, P_pi_star)
+    
+    @parameterized.expand(avg_rew_policy_evaluation_parameters)
+    def test_gain(self, name, pi):
+        env_config = get_env_config('gridworld')
+        env_config.grid = grids_and_policies[name]['grid']
+        env = GridworldEnv(env_config)
+
+        p, r = env.get_p_and_r()
+
+        rho_pi = compute_gain(p, r, pi, epsilon=self.epsilon, max_iter=self.max_iter)
+    
+
+    @parameterized.expand([(name,) for name in grids_and_policies])
+    def test_stat_mat_prod_val_func_eq_zero(self, name):
+        env_config = get_env_config('gridworld')
+        env_config.grid = grids_and_policies[name]['grid']
+        env = GridworldEnv(env_config)
+
+        p, r = env.get_p_and_r()
+
+        n_s, n_a = p.shape[:2]
+
+        # Total of |A| ^ |S| greedy policies, test feasible only on small MDPs
+        all_policies = np.array(np.meshgrid(*np.tile(np.arange(n_a), (n_s, 1)))).T.reshape(-1, n_s)
+
+
+        for pi_idx in all_policies:
+            pi = np.zeros((n_s, n_a))
+            pi[np.arange(n_s), pi_idx] = 1
+            v_pi = average_reward_policy_evaluation(p, r, pi, epsilon=self.epsilon, max_iter=self.max_iter)
+
+            P_pi = np.einsum('ijk,ij->ik', p, pi)
+            P_star_pi = stationary_transition_matrix(P_pi, epsilon=self.epsilon, max_iter=self.max_iter)
+
+            self.assertLessEqual(np.abs(P_star_pi @ v_pi).max(), self.epsilon, msg={
+                'pi': pi,
+                'P_star_pi': P_star_pi,
+                'v_pi': v_pi,
+                'P_star_pi @ v_pi': P_star_pi @ v_pi
+            })
 
     
     @parameterized.expand(avg_rew_policy_evaluation_parameters)
@@ -303,6 +344,8 @@ class TestAverageRewardValueIteration(TestCase):
             v_pi = average_reward_policy_evaluation(p, r, pi, epsilon=self.epsilon, max_iter=self.max_iter)
 
             self.assertTrue(np.all(v_pi_star - v_pi > 0), msg=({
+                'r': r,
+                'p': p,
                 'v_pi_star': v_pi_star,
                 'v_pi': v_pi,
                 'pi_star': pi_star,
