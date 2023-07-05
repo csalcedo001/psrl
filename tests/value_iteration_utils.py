@@ -91,19 +91,20 @@ def brute_force_steady_state_distribution(p, pi, epsilon=1e-2, max_iter=100):
 def stationary_transition_matrix(P_pi, epsilon, max_iter):
     n_s = P_pi.shape[0]
 
-    P_pi_prod = np.eye(n_s, n_s)
     P_pi_sum = np.zeros((n_s, n_s))
     P_pi_star = np.zeros((n_s, n_s))
+    P_pi_prod = np.eye(n_s, n_s)
 
-    for n in range(1, max_iter):
-        P_pi_prod = np.dot(P_pi_prod, P_pi)
+    for n in range(1, max_iter + 1):
         P_pi_sum += P_pi_prod
-        P_pi_star_ = P_pi_sum / n
 
-        if np.abs(P_pi_star_ - P_pi_star).max() < epsilon:
+        P_pi_star_ = P_pi_star
+        P_pi_star = P_pi_sum / n
+
+        if np.abs(P_pi_star - P_pi_star_).max() < epsilon:
             break
-            
-        P_pi_star = P_pi_star_
+
+        P_pi_prod = np.dot(P_pi_prod, P_pi)
     
     return P_pi_star
 
