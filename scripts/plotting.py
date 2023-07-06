@@ -317,12 +317,17 @@ def save_reward_count_heatmap_plot(env, r_count, file_path, title=None):
     plt.savefig(file_path)
     plt.close(fig)
 
-def save_losses_plot(losses, file_path, title=None):
+def save_losses_plot(losses, file_path, title=None, x_is_iterations=True):
     print("Processing losses plot...")
 
     fig, ax = plt.subplots()
     plt.title(title)
-    plt.xlabel("Iteration")
+
+    if x_is_iterations:
+        plt.xlabel("Iteration")
+    else:
+        plt.xlabel("Epochs")
+    
     plt.ylabel("Loss")
 
     ax.plot(losses)
