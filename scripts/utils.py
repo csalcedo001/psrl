@@ -1,4 +1,5 @@
 import os
+import glob
 import random
 import numpy as np
 import torch
@@ -39,7 +40,6 @@ def set_seed(seed: int = 0) -> None:
     os.environ["PYTHONHASHSEED"] = str(seed)
     print(f"Random seed set as {seed}")
 
-
 def get_experiment_path_from_config(exp_config, mkdir=False, root_type='data'):
     if root_type == 'data':
         root = exp_config.data_dir
@@ -51,10 +51,14 @@ def get_experiment_path_from_config(exp_config, mkdir=False, root_type='data'):
     experiment_dir = '{env}_{agent}_{training_steps}_{seed:0>4}'.format(**exp_config)
 
     experiment_path = os.path.join(root, experiment_dir)
-    if not os.path.exists(experiment_path):
+    
+    experiment_path_matches = glob.glob(experiment_path)
+    if len(experiment_path_matches) == 0:
         if not mkdir:
             raise ValueError(f"Experiment path {experiment_path} does not exist")
-        
+        elif experiment_path_matches[0] != experiment_path:
+            raise ValueError(f"Cannot create experiment path from a file pattern {experiment_path}")
+
         os.makedirs(experiment_path, exist_ok=True)
     
     return experiment_path

@@ -20,11 +20,11 @@ exp_config, env, _, accelerator = setup_script()
 
 
 # Get dataset of trajectories
-paths = []
-for seed in range(3):
-    data_src_config = copy.deepcopy(exp_config)
-    data_src_config.seed = seed
-    paths.append(get_file_path_from_config('trajectories.pkl', data_src_config))
+data_config_pattern = copy.deepcopy(exp_config)
+data_config_pattern.seed = '****'
+data_path_pattern = get_file_path_from_config('trajectories.pkl', data_config_pattern)
+paths = glob.glob(data_path_pattern)
+paths.sort()
 
 # Load trajectories
 trajectories = []
