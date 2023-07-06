@@ -2,6 +2,8 @@ import torch
 from torch.utils.data import DataLoader
 from transformers import GPT2Config, GPT2LMHeadModel
 from tqdm import tqdm
+import copy
+import glob
 
 from setup_script import setup_script
 from file_system import load_pickle, save_pickle
@@ -18,19 +20,43 @@ exp_config, env, _, accelerator = setup_script()
 
 
 # Get dataset of trajectories
-trajectories_path = get_file_path_from_config('trajectories.pkl', exp_config)
-raw_trajectory = load_pickle(trajectories_path)
-raw_trajectories = [raw_trajectory]
+paths = []
+for seed in range(3):
+    data_src_config = copy.deepcopy(exp_config)
+    data_src_config.seed = seed
+    paths.append(get_file_path_from_config('trajectories.pkl', data_src_config))
 
-trajectory_dataset = TrajectoryDataset(
+# Load trajectories
+trajectories = []
+for trajectory_path in paths:
+    trajectory = load_pickle(trajectory_path)
+    trajectories.append(trajectory)
+
+# Split into train and val sets
+train_val_split_ratio = 0.9
+train_trajectories = trajectories[:max(int(len(trajectories) * train_val_split_ratio), 1)]
+val_trajectories = trajectories[int(len(trajectories) * train_val_split_ratio):]
+
+# Datasets
+train_dataset = TrajectoryDataset(
     env,
-    raw_trajectories,
+    train_trajectories,
     seq_len=exp_config.seq_len
 )
-vocab_size = trajectory_dataset.get_vocab_size()
+val_dataset = TrajectoryDataset(
+    env,
+    val_trajectories,
+    seq_len=exp_config.seq_len
+)
 
-data_loader = DataLoader(
-    trajectory_dataset,
+train_data_loader = DataLoader(
+    train_dataset,
+    batch_size=exp_config.batch_size,
+    shuffle=True,
+    drop_last=True,
+)
+val_data_loader = DataLoader(
+    val_dataset,
     batch_size=exp_config.batch_size,
     shuffle=True,
     drop_last=True,
@@ -39,6 +65,8 @@ data_loader = DataLoader(
 
 
 # Get model
+vocab_size = train_dataset.get_vocab_size()
+
 model_config = GPT2Config()
 
 model_config.vocab_size = vocab_size
@@ -54,7 +82,7 @@ model.train()
 optimizer = torch.optim.Adam(model.parameters(), lr=exp_config.lr)
 criterion = torch.nn.CrossEntropyLoss()
 
-model, optimizer, data_loader = accelerator.prepare(model, optimizer, data_loader)
+model, optimizer, train_data_loader, val_data_loader = accelerator.prepare(model, optimizer, train_data_loader, val_data_loader)
 
 metrics = {
     'loss': [],
@@ -64,8 +92,8 @@ metrics = {
 
 print("Starting training...")
 for epoch in range(exp_config.epochs):
-    pbar = tqdm(total=len(data_loader))
-    for batch in data_loader:
+    pbar = tqdm(total=len(train_data_loader))
+    for batch in train_data_loader:
         x, y = batch
         
         output = model(input_ids=x)
@@ -81,27 +109,27 @@ for epoch in range(exp_config.epochs):
 
         pbar.update(1)
         pbar.set_description(f"[{epoch}/{exp_config.epochs}] Loss: {loss.item():.4f}")
+
+    model.eval()
+    with torch.no_grad():
+        raw_accuracy = compute_raw_accuracy(model, val_data_loader)
+        last_action_accuracy = compute_last_action_accuracy(model, val_data_loader)
+
+        metrics['raw_accuracy'].append(raw_accuracy)
+        metrics['last_action_accuracy'].append(last_action_accuracy)
     
-    if epoch % 10 == 0:
+    model.train()
+    
+    if (epoch - 1) % 10 == 0:
         checkpoints_dir = get_file_path_from_config('checkpoints', exp_config)
         accelerator.save_state(checkpoints_dir)
-
-        model.eval()
-        with torch.no_grad():
-            raw_accuracy = compute_raw_accuracy(model, data_loader)
-            last_action_accuracy = compute_last_action_accuracy(model, data_loader)
-
-            metrics['raw_accuracy'].append(raw_accuracy)
-            metrics['last_action_accuracy'].append(last_action_accuracy)
-        
-        model.train()
 
 
 
 # Evaluation after training
 device = accelerator.device
 
-x, y = next(iter(data_loader))
+x, y = next(iter(train_data_loader))
 x = x.to(device)
 
 model.eval()
