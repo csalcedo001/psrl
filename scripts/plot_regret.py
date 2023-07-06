@@ -22,7 +22,7 @@ args = parser.parse_args()
 exp_config = get_experiment_config(args)
 
 # Setup experiment given a configuration
-accelerator = setup_experiment(exp_config)
+_ = setup_experiment(exp_config, mode='plot')
 
 # Get env and agent
 env = get_environment(exp_config)

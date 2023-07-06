@@ -7,7 +7,7 @@ from utils import get_file_path_from_config
 
 
 # Setup script
-exp_config, env, _, accelerator = setup_script()
+exp_config, env, _, accelerator = setup_script(mode='plot')
 
 
 

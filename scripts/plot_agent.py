@@ -17,7 +17,7 @@ from utils import get_file_path_from_config
 
 
 # Setup script
-exp_config, env, agent, accelerator = setup_script()
+exp_config, env, agent, _ = setup_script(mode='plot')
 agent_path = get_file_path_from_config('agent.pkl', exp_config)
 agent.load(agent_path)
 
