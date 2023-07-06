@@ -1,59 +1,25 @@
-import os
 import torch
-from torch.utils.data import Dataset, DataLoader
-import numpy as np
+from torch.utils.data import DataLoader
 from transformers import GPT2Config, GPT2LMHeadModel
-import pickle
 from tqdm import tqdm
-from accelerate import Accelerator
 
-from psrl.config import get_env_config
-from psrl.utils import env_name_map
-
-from arg_utils import get_experiment_parser, process_experiment_config
+from setup_script import setup_script
+from file_system import load_pickle, save_pickle
 from trajectory_dataset import TrajectoryDataset
 from metrics import compute_raw_accuracy, compute_last_action_accuracy
-from utils import load_experiment_config, set_seed, get_file_path_from_config, get_experiment_path_from_config
+from utils import get_file_path_from_config
 
 
 
 
-
-
-# Get experiment configuration
-parser = get_experiment_parser()
-args = parser.parse_args()
-config_path = args.config
-exp_config = load_experiment_config(config_path)
-exp_config = process_experiment_config(args, exp_config)
-
-
-
-# Setup experiment
-set_seed(exp_config.seed)
-print("*** SEED:", exp_config.seed)
-
-data_dir = get_experiment_path_from_config(exp_config, mkdir=True, root_type='data')
-accelerator = Accelerator(project_dir=data_dir)
-
-
-
-# Get environment
-env_class = env_name_map[exp_config.env]
-env_config = get_env_config(exp_config.env)
-env_config['gamma'] = exp_config.gamma
-env_config['no_goal'] = exp_config.no_goal
-env = env_class(env_config)
+# Setup script
+exp_config, env, _, accelerator = setup_script()
 
 
 
 # Get dataset of trajectories
-checkpoints_path = os.path.join(os.path.dirname(__file__), exp_config.save_path)
-os.makedirs(checkpoints_path, exist_ok=True)
-
 trajectories_path = get_file_path_from_config('trajectories.pkl', exp_config)
-with open(trajectories_path, 'rb') as f:
-    raw_trajectories = pickle.load(f)
+raw_trajectories = load_pickle(trajectories_path)
 
 trajectory_dataset = TrajectoryDataset(
     env,
@@ -156,9 +122,11 @@ print()
 
 
 # Save results
+checkpoints_dir = get_file_path_from_config('checkpoints', exp_config)
+accelerator.save_state(checkpoints_dir)
+
 model_path = get_file_path_from_config('model.pt', exp_config, mkdir=True)
 torch.save(model.state_dict(), model_path)
 
 metrics_path = get_file_path_from_config('metrics.pkl', exp_config, mkdir=True)
-with open(metrics_path, 'wb') as f:
-    pickle.dump(metrics, f)
+save_pickle(metrics, metrics_path)
