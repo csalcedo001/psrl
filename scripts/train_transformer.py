@@ -19,7 +19,8 @@ exp_config, env, _, accelerator = setup_script()
 
 # Get dataset of trajectories
 trajectories_path = get_file_path_from_config('trajectories.pkl', exp_config)
-raw_trajectories = load_pickle(trajectories_path)
+raw_trajectory = load_pickle(trajectories_path)
+raw_trajectories = [raw_trajectory]
 
 trajectory_dataset = TrajectoryDataset(
     env,

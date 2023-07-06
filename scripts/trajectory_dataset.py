@@ -6,30 +6,48 @@ from torch.utils.data import Dataset
 
 
 class TrajectoryDataset(Dataset):
-    def __init__(self, env, raw_trajectories, seq_len=64, beta=4):
+    def __init__(self, env, raw_trajectories, seq_len=64, beta=4, stride=None):
         if seq_len % 2 != 0:
             raise ValueError("seq_len must be even")
         
         self.seq_len = seq_len
         self.beta = beta
         self.missing_token = env.observation_space.n + env.action_space.n
+
+        if stride == None:
+            stride = seq_len // 2
+        self.stride = stride
         
+        # We assume all trajectories have same length
         trajectories = []
-        for s, a, _, _ in raw_trajectories:
-            trajectories.append(s + env.action_space.n)
-            trajectories.append(a)
+        for raw_trajectory in raw_trajectories:
+            trajectory = []
+            for s, a, _, _ in raw_trajectory:
+                trajectory.append(s + env.action_space.n)
+                trajectory.append(a)
+
+            trajectories.append(trajectory)
         
         self.trajectories = trajectories
+
+        self.trajectory_num_idxs = ((len(self.trajectories[0]) - self.seq_len) // 2) // self.stride
+        self.dataset_num_idxs = len(self.trajectories) * self.trajectory_num_idxs
     
     def get_vocab_size(self):
         return self.missing_token + 1
 
     def __len__(self):
-        return (len(self.trajectories) - self.seq_len) // 2
+        return self.dataset_num_idxs
     
     def __getitem__(self, idx):
         # Get trajectory of length seq_len
-        trajectory = np.array(self.trajectories[2 * idx: 2 * idx + self.seq_len])
+        traj_idx = idx // self.trajectory_num_idxs
+        step_idx = idx % self.trajectory_num_idxs
+
+        start_idx = 2 * step_idx * self.stride
+        end_idx = start_idx + self.seq_len
+
+        trajectory = np.array(self.trajectories[traj_idx][start_idx : end_idx])
 
         y = torch.LongTensor(trajectory)
 
