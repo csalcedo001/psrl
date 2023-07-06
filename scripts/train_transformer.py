@@ -89,7 +89,8 @@ model, optimizer, train_data_loader, val_data_loader = accelerator.prepare(model
 wandb.define_metric('iteration')
 wandb.define_metric('epoch')
 
-wandb.define_metric('train/loss', step_metric='iteration')
+wandb.define_metric('train/batch_loss', step_metric='iteration')
+wandb.define_metric('train/loss', step_metric='epoch')
 wandb.define_metric('val/loss', step_metric='epoch')
 wandb.define_metric('val/accuracy', step_metric='epoch')
 wandb.define_metric('val/last_action_accuracy', step_metric='epoch')
@@ -97,6 +98,7 @@ wandb.define_metric('val/last_action_accuracy', step_metric='epoch')
 
 # Start training loop
 metrics = {
+    'train/batch_loss': [],
     'train/loss': [],
     'val/loss': [],
     'val/accuracy': [],
@@ -126,10 +128,10 @@ for epoch in range(exp_config.epochs):
         optimizer.step()
         optimizer.zero_grad()
 
-        # Log metrics
-        metrics['train/loss'].append(loss.item())
+        # Log batch metrics
+        metrics['train/batch_loss'].append(loss.item())
         wandb.log({
-            'train/loss': loss.item(),
+            'train/batch_loss': loss.item(),
             'iteration': total_train_iter,
         })
 
@@ -154,9 +156,13 @@ for epoch in range(exp_config.epochs):
     
     model.train()
 
-    # Log metrics
-    val_metrics['epoch'] = epoch
-    wandb.log(val_metrics)
+    # Log epoch metrics
+    epoch_metrics = {
+        'epoch': epoch,
+        'train/loss': metrics['train/batch_loss'][-1],
+        **val_metrics,
+    }
+    wandb.log(epoch_metrics)
     
     # Save checkpoint every 5 epochs
     if (epoch - 1) % 10 == 0:
