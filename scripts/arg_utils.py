@@ -68,7 +68,7 @@ def get_config(args, envs=None, agents=None):
 
     return DotMap(config)
 
-def get_experiment_parser():
+def get_parser():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--config', type=str, default=None, help='Path to experiment configuration file', required=True)
