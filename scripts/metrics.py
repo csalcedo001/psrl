@@ -9,7 +9,8 @@ def compute_metrics(model, data_loader, criterion):
     hits_and_misses = 0
     last_action_hits = 0
     last_action_hits_and_misses = 0
-    pbar = tqdm(total=len(data_loader.dataset))
+
+    pbar = tqdm(total=len(data_loader))
     for i, (x, y) in enumerate(data_loader):
         # Compute loss
         output = model(input_ids=x)
