@@ -1,9 +1,5 @@
 # Description: Configuration file for the experiment
 
-# Data parameters
-save_path: '/data/csalcedo/psrl/data'
-plots_path: 'plots'
-
 # Setup parameters
 seed: 0
 
@@ -17,8 +13,8 @@ no_goal: True
 training_steps: 1000000
 
 # Transformer training parameters
-epochs: 6
-batch_size: 32
+epochs: 21
+batch_size: 90
 lr: 0.001
 seq_len: 64
 

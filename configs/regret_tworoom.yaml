@@ -1,9 +1,5 @@
 # Description: Configuration file for the experiment
 
-# Data parameters
-save_path: 'data'
-plots_path: 'plots'
-
 # Setup parameters
 seed: 0
 
