@@ -177,7 +177,7 @@ env = env_class(env_config)
 
 
 # Get dataset of trajectories
-checkpoints_path = os.path.join(os.path.dirname(__file__), exp_config.save_path)
+checkpoints_path = os.path.join(os.path.dirname(__file__), exp_config.data_dir)
 os.makedirs(checkpoints_path, exist_ok=True)
 
 trajectories_path = get_file_path_from_config('trajectories.pkl', exp_config)

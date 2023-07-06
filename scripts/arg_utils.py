@@ -86,7 +86,7 @@ def process_experiment_config(args, exp_config):
         exp_config.no_goal = args.goal_reward == 0
 
     if not exp_config.no_goal:
-        exp_config.save_path = os.path.join(exp_config.save_path, 'regret_plot')
-        exp_config.plots_path = os.path.join(exp_config.plots_path, 'regret_plot')
+        exp_config.data_dir = os.path.join(exp_config.data_dir, 'regret_plot')
+        exp_config.plots_dir = os.path.join(exp_config.plots_dir, 'regret_plot')
 
     return exp_config

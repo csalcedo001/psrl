@@ -2,6 +2,7 @@ import os
 import random
 import numpy as np
 import torch
+from dotenv import load_dotenv
 from accelerate import Accelerator
 
 from psrl.config import get_env_config, get_agent_config
@@ -11,7 +12,7 @@ from file_system import load_yaml
 from arg_utils import get_parser
 
 
-def setup_script():# Get experiment configuration
+def setup_script():
     # Get args
     parser = get_parser()
     args = parser.parse_args()
@@ -38,10 +39,15 @@ def get_experiment_config(args):
 
     if args.goal_reward is not None:
         exp_config.no_goal = args.goal_reward == 0
+    
+    data_dir, plots_dir = load_dirs_from_env()
+
+    exp_config.data_dir = data_dir
+    exp_config.plots_dir = plots_dir
 
     if not exp_config.no_goal:
-        exp_config.save_path = os.path.join(exp_config.save_path, 'regret_plot')
-        exp_config.plots_path = os.path.join(exp_config.plots_path, 'regret_plot')
+        exp_config.data_dir = os.path.join(exp_config.data_dir, 'regret_plot')
+        exp_config.plots_dir = os.path.join(exp_config.plots_dir, 'regret_plot')
 
     return exp_config
 
@@ -96,3 +102,11 @@ def get_agent(exp_config, env):
     agent = agent_class(env, agent_config)
 
     return agent
+
+def load_dirs_from_env():
+    load_dotenv()
+
+    data_dir = os.getenv("DATA_DIR")
+    plots_dir = os.getenv("PLOTS_DIR")
+
+    return data_dir, plots_dir

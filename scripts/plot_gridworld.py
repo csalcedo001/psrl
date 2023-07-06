@@ -31,7 +31,7 @@ for env_name in ['tworoom', 'fourroom']:
 
     # Plot gridworld
     filename = env_name + '.png'
-    root = exp_config.plots_path
+    root = exp_config.plots_dir
     experiment_dir = 'gridworlds'
 
     file_dir = os.path.join(root, experiment_dir)

@@ -42,9 +42,9 @@ def set_seed(seed: int = 0) -> None:
 
 def get_experiment_path_from_config(exp_config, mkdir=False, root_type='data'):
     if root_type == 'data':
-        root = exp_config.save_path
+        root = exp_config.data_dir
     elif root_type == 'plots':
-        root = exp_config.plots_path
+        root = exp_config.plots_dir
     else:
         raise ValueError(f"Unknown root directory type {root_type}. Choose from 'data' or 'plots'")
 
