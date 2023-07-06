@@ -26,7 +26,7 @@ def setup_script():# Get experiment configuration
     env = get_environment(exp_config)
     agent = get_agent(env, exp_config)
 
-    return env, agent, accelerator
+    return exp_config, env, agent, accelerator
 
 
 def get_experiment_config(args):

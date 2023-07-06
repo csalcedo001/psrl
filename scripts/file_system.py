@@ -1,6 +1,7 @@
 import yaml
 import json
 import pickle
+import torch
 from dotmap import DotMap
 
 def load_yaml(path):
@@ -32,6 +33,12 @@ def load_pickle(path):
 def save_pickle(obj, path):
     with open(path, 'wb') as f:
         pickle.dump(obj, f)
+
+def save_pt(model, path):
+    torch.save(model.state_dict(), path)
+
+def load_pt(model, path):
+    model.load_state_dict(torch.load(path))
 
 
 def save_obj(obj, path):
