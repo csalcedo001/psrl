@@ -91,9 +91,15 @@ metrics = {
 }
 
 print("Starting training...")
+
+epoch_pbar = tqdm(total=exp_config.epochs)
+epoch_pbar.set_description(f"* EPOCH LOOP. Accuracy: NA")
+print()
 for epoch in range(exp_config.epochs):
-    pbar = tqdm(total=len(train_data_loader))
-    for batch in train_data_loader:
+
+    batch_pbar = tqdm(total=len(train_data_loader))
+    batch_pbar.set_description(f"  - BATCH LOOP. Loss: NA")
+    for i, batch in enumerate(train_data_loader):
         x, y = batch
         
         output = model(input_ids=x)
@@ -107,8 +113,8 @@ for epoch in range(exp_config.epochs):
 
         metrics['loss'].append(loss.item())
 
-        pbar.update(1)
-        pbar.set_description(f"[{epoch}/{exp_config.epochs}] Loss: {loss.item():.4f}")
+        batch_pbar.update(1)
+        batch_pbar.set_description(f"  - BATCH LOOP. Loss: {loss.item():.4f}")
 
     model.eval()
     with torch.no_grad():
@@ -123,6 +129,10 @@ for epoch in range(exp_config.epochs):
     if (epoch - 1) % 10 == 0:
         checkpoints_dir = get_file_path_from_config('checkpoints', exp_config)
         accelerator.save_state(checkpoints_dir)
+    
+    epoch_pbar.update(1)
+    epoch_pbar.set_description(f"* EPOCH LOOP. Accuracy: {last_action_accuracy:.4f}")
+    print()
 
 
 
