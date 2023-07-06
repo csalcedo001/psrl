@@ -49,17 +49,17 @@ def get_experiment_path_from_config(exp_config, mkdir=False, root_type='data'):
         raise ValueError(f"Unknown root directory type {root_type}. Choose from 'data' or 'plots'")
 
     experiment_dir = '{env}_{agent}_{training_steps}_{seed:0>4}'.format(**exp_config)
-
     experiment_path = os.path.join(root, experiment_dir)
     
     experiment_path_matches = glob.glob(experiment_path)
-    if len(experiment_path_matches) == 0:
-        if not mkdir:
-            raise ValueError(f"Experiment path {experiment_path} does not exist")
-        elif experiment_path_matches[0] != experiment_path:
+    if mkdir:
+        if '*' in experiment_path:
             raise ValueError(f"Cannot create experiment path from a file pattern {experiment_path}")
 
         os.makedirs(experiment_path, exist_ok=True)
+
+    elif len(experiment_path_matches) == 0:
+            raise ValueError(f"Experiment path {experiment_path} does not exist")
     
     return experiment_path
 

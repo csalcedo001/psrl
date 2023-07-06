@@ -1,6 +1,52 @@
 import torch
 from tqdm import tqdm
 
+def compute_metrics(model, data_loader, criterion):
+    vocab_size = data_loader.dataset.get_vocab_size()
+
+    loss = 0
+    hits = 0
+    hits_and_misses = 0
+    last_action_hits = 0
+    last_action_hits_and_misses = 0
+    pbar = tqdm(total=len(data_loader.dataset))
+    for i, (x, y) in enumerate(data_loader):
+        # Compute loss
+        output = model(input_ids=x)
+        y_logits = output.logits.view(-1, vocab_size)
+        batch_loss = criterion(y_logits, y.view(-1))
+        loss = batch_loss.item() / (i + 1)
+
+        # Compute accuracy
+        y_hat = output.logits.argmax(dim=-1)
+        hits += torch.sum(y == y_hat).item()
+        hits_and_misses += torch.ones_like(y).sum().item()
+        accuracy = hits / hits_and_misses
+
+        # Compute last action accuracy
+        x = y.clone().detach()
+        x[:, -1] = data_loader.dataset.missing_token
+
+        output = model(input_ids=x)
+        y_hat = output.logits.argmax(dim=-1)
+
+        batch_hits = torch.sum(y[:, -1] == y_hat[:, -1]).item()
+        last_action_hits += batch_hits
+        last_action_hits_and_misses += torch.ones_like(y[:, -1]).sum().item()
+        last_action_accuracy = last_action_hits / last_action_hits_and_misses
+
+        pbar.update(1)
+        pbar.set_description(f"  - RAW ACCURACY. Loss: {loss:.4f}. Accuracy: {accuracy:.4f}. Last action accuracy: {last_action_accuracy:.4f}")
+    
+    pbar.close()
+
+    return {
+        'loss': loss,
+        'accuracy': accuracy,
+        'last_action_accuracy': last_action_accuracy
+    }
+
+
 def compute_raw_accuracy(model, data_loader):
     accuracies = []
     pbar = tqdm(total=len(data_loader.dataset))

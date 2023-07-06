@@ -8,7 +8,7 @@ import glob
 from setup_script import setup_script
 from file_system import load_pickle, save_pickle
 from trajectory_dataset import TrajectoryDataset
-from metrics import compute_raw_accuracy, compute_last_action_accuracy
+from metrics import compute_metrics
 from utils import get_file_path_from_config
 
 
@@ -86,14 +86,15 @@ model, optimizer, train_data_loader, val_data_loader = accelerator.prepare(model
 
 metrics = {
     'loss': [],
-    'raw_accuracy': [],
-    'last_action_accuracy': [],
+    'val_loss': [],
+    'val_accuracy': [],
+    'val_last_action_accuracy': [],
 }
 
 print("Starting training...")
 
 epoch_pbar = tqdm(total=exp_config.epochs)
-epoch_pbar.set_description(f"* EPOCH LOOP. Accuracy: NA")
+epoch_pbar.set_description(f"* EPOCH LOOP. Acc: NA. LAA: NA")
 print()
 for epoch in range(exp_config.epochs):
 
@@ -116,13 +117,14 @@ for epoch in range(exp_config.epochs):
         batch_pbar.update(1)
         batch_pbar.set_description(f"  - BATCH LOOP. Loss: {loss.item():.4f}")
 
+    print()
+    
     model.eval()
     with torch.no_grad():
-        raw_accuracy = compute_raw_accuracy(model, val_data_loader)
-        last_action_accuracy = compute_last_action_accuracy(model, val_data_loader)
+        val_metrics = compute_metrics(model, val_data_loader, criterion)
 
-        metrics['raw_accuracy'].append(raw_accuracy)
-        metrics['last_action_accuracy'].append(last_action_accuracy)
+        for metric_name, val in val_metrics.items():
+            metrics['val_' + metric_name].append(val)
     
     model.train()
     
@@ -131,7 +133,7 @@ for epoch in range(exp_config.epochs):
         accelerator.save_state(checkpoints_dir)
     
     epoch_pbar.update(1)
-    epoch_pbar.set_description(f"* EPOCH LOOP. Accuracy: {last_action_accuracy:.4f}")
+    epoch_pbar.set_description(f"* EPOCH LOOP. Acc: {metrics['val_accuracy'][-1]:.4f}. LAA: {metrics['val_last_action_accuracy'][-1]:.4f}")
     print()
 
 
