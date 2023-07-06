@@ -20,23 +20,23 @@ metrics = load_pickle(metrics_path)
 # Save plots
 print('Saving plots...')
 save_losses_plot(
-    metrics['loss'],
-    get_file_path_from_config('training_loss.png', exp_config, mkdir=True, root_type='plots'),
+    metrics['train/loss'],
+    get_file_path_from_config('train_loss.png', exp_config, mkdir=True, root_type='plots'),
     title='Training Loss',
 )
 save_losses_plot(
-    metrics['val_loss'],
+    metrics['val/loss'],
     get_file_path_from_config('val_loss.png', exp_config, mkdir=True, root_type='plots'),
     title='Validation Loss',
     x_is_iterations=False,
 )
 save_accuracy_plot(
-    metrics['val_accuracy'],
+    metrics['val/accuracy'],
     get_file_path_from_config('val_accuracy.png', exp_config, root_type='plots'),
     title='Validation Accuracy',
 )
 save_accuracy_plot(
-    metrics['val_last_action_accuracy'],
+    metrics['val/last_action_accuracy'],
     get_file_path_from_config('val_last_action_accuracy.png', exp_config, root_type='plots'),
     title='Single-Action Validation Accuracy',
 )

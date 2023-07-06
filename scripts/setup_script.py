@@ -69,7 +69,7 @@ def setup_experiment(exp_config, mode='run'):
 
     has_wandb_envs = len(wandb_env_var_matches) != 0
     if has_wandb_envs and mode == 'run':
-        wandb.init()
+        wandb.init(config=exp_config.toDict())
     else:
         wandb.init(mode="disabled")
 

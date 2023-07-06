@@ -50,15 +50,19 @@ def get_experiment_path_from_config(exp_config, mkdir=False, root_type='data'):
 
     experiment_dir = '{env}_{agent}_{training_steps}_{seed:0>4}'.format(**exp_config)
     experiment_path = os.path.join(root, experiment_dir)
+    path_is_pattern = '*' in experiment_path
     
     experiment_path_matches = glob.glob(experiment_path)
     if mkdir:
-        if '*' in experiment_path:
+        if path_is_pattern:
             raise ValueError(f"Cannot create experiment path from a file pattern {experiment_path}")
 
         os.makedirs(experiment_path, exist_ok=True)
 
     elif len(experiment_path_matches) == 0:
+        if path_is_pattern:
+            raise ValueError(f"Experiment path pattern {experiment_path} does not match any files")
+        else:
             raise ValueError(f"Experiment path {experiment_path} does not exist")
     
     return experiment_path

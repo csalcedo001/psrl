@@ -4,6 +4,7 @@ from transformers import GPT2Config, GPT2LMHeadModel
 from tqdm import tqdm
 import copy
 import glob
+import wandb
 
 from setup_script import setup_script
 from file_system import load_pickle, save_pickle
@@ -84,22 +85,35 @@ criterion = torch.nn.CrossEntropyLoss()
 
 model, optimizer, train_data_loader, val_data_loader = accelerator.prepare(model, optimizer, train_data_loader, val_data_loader)
 
+# Define metrics
+wandb.define_metric('iteration')
+wandb.define_metric('epoch')
+
+wandb.define_metric('train/loss', step_metric='iteration')
+wandb.define_metric('val/loss', step_metric='epoch')
+wandb.define_metric('val/accuracy', step_metric='epoch')
+wandb.define_metric('val/last_action_accuracy', step_metric='epoch')
+
+
+# Start training loop
 metrics = {
-    'loss': [],
-    'val_loss': [],
-    'val_accuracy': [],
-    'val_last_action_accuracy': [],
+    'train/loss': [],
+    'val/loss': [],
+    'val/accuracy': [],
+    'val/last_action_accuracy': [],
 }
 
 print("Starting training...")
 
+total_train_iter = 0
 epoch_pbar = tqdm(total=exp_config.epochs)
 epoch_pbar.set_description(f"* EPOCH LOOP. Acc: NA. LAA: NA")
 print()
 for epoch in range(exp_config.epochs):
-
+    # Training loop
     batch_pbar = tqdm(total=len(train_data_loader))
     batch_pbar.set_description(f"  - BATCH LOOP. Loss: NA")
+
     for i, batch in enumerate(train_data_loader):
         x, y = batch
         
@@ -112,28 +126,45 @@ for epoch in range(exp_config.epochs):
         optimizer.step()
         optimizer.zero_grad()
 
-        metrics['loss'].append(loss.item())
+        # Log metrics
+        metrics['train/loss'].append(loss.item())
+        wandb.log({
+            'train/loss': loss.item(),
+            'iteration': total_train_iter,
+        })
 
+
+        total_train_iter += 1
         batch_pbar.update(1)
         batch_pbar.set_description(f"  - BATCH LOOP. Loss: {loss.item():.4f}")
 
     print()
     
+    # Validation loop
     model.eval()
     with torch.no_grad():
-        val_metrics = compute_metrics(model, val_data_loader, criterion)
+        val_metrics_raw = compute_metrics(model, val_data_loader, criterion)
 
-        for metric_name, val in val_metrics.items():
-            metrics['val_' + metric_name].append(val)
+        val_metrics = {}
+        for metric_name in val_metrics_raw:
+            val_metrics['val/' + metric_name] = val_metrics_raw[metric_name]
+
+        for metric_name, metric_val in val_metrics.items():
+            metrics[metric_name].append(metric_val)
     
     model.train()
+
+    # Log metrics
+    val_metrics['epoch'] = epoch
+    wandb.log(val_metrics)
     
+    # Save checkpoint every 5 epochs
     if (epoch - 1) % 10 == 0:
         checkpoints_dir = get_file_path_from_config('checkpoints', exp_config)
         accelerator.save_state(checkpoints_dir)
-    
+
     epoch_pbar.update(1)
-    epoch_pbar.set_description(f"* EPOCH LOOP. Acc: {metrics['val_accuracy'][-1]:.4f}. LAA: {metrics['val_last_action_accuracy'][-1]:.4f}")
+    epoch_pbar.set_description(f"* EPOCH LOOP. Acc: {metrics['val/accuracy'][-1]:.4f}. LAA: {metrics['val/last_action_accuracy'][-1]:.4f}")
     print()
 
 
