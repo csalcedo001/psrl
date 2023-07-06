@@ -169,6 +169,9 @@ for epoch in range(exp_config.epochs):
         checkpoints_dir = get_file_path_from_config('checkpoints', exp_config)
         accelerator.save_state(checkpoints_dir)
 
+        metrics_path = get_file_path_from_config('metrics.pkl', exp_config, mkdir=True)
+        save_pickle(metrics, metrics_path)
+
     epoch_pbar.update(1)
     epoch_pbar.set_description(f"* EPOCH LOOP. Acc: {metrics['val/accuracy'][-1]:.4f}. LAA: {metrics['val/last_action_accuracy'][-1]:.4f}")
     print()
