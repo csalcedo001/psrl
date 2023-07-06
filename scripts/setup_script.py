@@ -1,9 +1,11 @@
 import os
+import re
 import random
 import numpy as np
 import torch
 from dotenv import load_dotenv
 from accelerate import Accelerator
+import wandb
 
 from psrl.config import get_env_config, get_agent_config
 from psrl.utils import env_name_map, agent_name_map
@@ -12,7 +14,7 @@ from file_system import load_yaml
 from arg_utils import get_parser
 
 
-def setup_script():
+def setup_script(mode='run'):
     # Get args
     parser = get_parser()
     args = parser.parse_args()
@@ -21,7 +23,7 @@ def setup_script():
     exp_config = get_experiment_config(args)
 
     # Setup experiment given a configuration
-    accelerator = setup_experiment(exp_config)
+    accelerator = setup_experiment(exp_config, mode=mode)
 
     # Get env and agent
     env = get_environment(exp_config)
@@ -52,13 +54,24 @@ def get_experiment_config(args):
     return exp_config
 
 
-def setup_experiment(exp_config):
+def setup_experiment(exp_config, mode='run'):
     # Setup seed for reproducibility
     setup_seed(exp_config.seed)
     print("*** SEED:", exp_config.seed)
 
     # Setup device (automated by accelerate)
     accelerator = Accelerator(project_dir=exp_config.data_dir)
+
+    # Init wandb only if env variables provided
+    env_vars = list(dict(os.environ).keys())
+    wandb_env_var_pattern = re.compile("WANDB_*")
+    wandb_env_var_matches = list(filter(wandb_env_var_pattern.match, env_vars))
+
+    has_wandb_envs = len(wandb_env_var_matches) != 0
+    if has_wandb_envs and mode == 'run':
+        wandb.init()
+    else:
+        wandb.init(mode="disabled")
 
     return accelerator
 
@@ -106,6 +119,7 @@ def get_agent(exp_config, env):
 def load_dirs_from_env():
     load_dotenv()
 
+    # Directories MUST be set as environment variables
     data_dir = os.getenv("DATA_DIR")
     plots_dir = os.getenv("PLOTS_DIR")
 
