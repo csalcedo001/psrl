@@ -6,7 +6,7 @@ from torch.utils.data import Dataset
 
 
 class TrajectoryDataset(Dataset):
-    def __init__(self, env, raw_trajectories, seq_len=64, beta=4, stride=None):
+    def __init__(self, env, raw_trajectories, seq_len=64, beta=8, stride=None):
         if seq_len % 2 != 0:
             raise ValueError("seq_len must be even")
         
