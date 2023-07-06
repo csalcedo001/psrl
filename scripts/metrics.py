@@ -37,7 +37,7 @@ def compute_metrics(model, data_loader, criterion):
         last_action_accuracy = last_action_hits / last_action_hits_and_misses
 
         pbar.update(1)
-        pbar.set_description(f"  - RAW ACCURACY. Loss: {loss:.4f}. Accuracy: {accuracy:.4f}. Last action accuracy: {last_action_accuracy:.4f}")
+        pbar.set_description(f"  - RAW ACCURACY. Loss: {loss:.4f}. Acc: {accuracy:.4f}. LAA: {last_action_accuracy:.4f}")
     
     pbar.close()
 
@@ -59,7 +59,7 @@ def compute_raw_accuracy(model, data_loader):
         accuracies.append(accuracy)
 
         pbar.update(1)
-        pbar.set_description(f"  - RAW ACCURACY. Accuracy: {torch.mean(accuracy).item():.4f}")
+        pbar.set_description(f"  - RAW ACCURACY. Acc: {torch.mean(accuracy).item():.4f}")
     
     accuracy = torch.mean(torch.concatenate(accuracies))
 
@@ -79,7 +79,7 @@ def compute_last_action_accuracy(model, data_loader):
         hits += batch_hits
 
         pbar.update(1)
-        pbar.set_description(f"  - LAST ACTION ACCURACY. Hits: {hits}/{len(data_loader.dataset)}")
+        pbar.set_description(f"  - LAST ACTION ACCURACY. LAA: {hits}/{len(data_loader.dataset)}")
     
     hits_and_misses = len(data_loader.dataset)
     accuracy = hits / hits_and_misses
