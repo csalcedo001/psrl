@@ -163,7 +163,11 @@ disc_policy_evaluation_parameters = [
 disc_value_iteration_parameters = [
     (name, gamma)
     for name in grids_and_policies
-    for gamma in [1.0, 0.9]
+    for gamma in [
+        # 1,       # In general, this shouldn't be a valid value for gamma
+        0,99,
+        0.9,
+    ]
 ]
 
 class TestDiscountedValueIteration(TestCase):
@@ -269,33 +273,66 @@ class TestAverageRewardValueIteration(TestCase):
     epsilon = 1e-3      # Threshold of absolute maximum difference
     max_iter = 1000     # Maximum number of iterations
     
-    @parameterized.expand(avg_rew_policy_evaluation_parameters)
-    def test_stationary_matrix(self, name, pi):
+    @parameterized.expand([(name,) for name in grids_and_policies])
+    def test_stationary_matrix_all_policies(self, name):
         env_config = get_env_config('gridworld')
         env_config.grid = grids_and_policies[name]['grid']
         env = GridworldEnv(env_config)
 
         p, r = env.get_p_and_r()
-        P_pi = np.einsum('ijk,ij->ik', p, pi)
-        P_pi_star = stationary_transition_matrix(P_pi, epsilon=self.epsilon, max_iter=self.max_iter)
 
-        P_pi_star_ = P_pi_star @ P_pi
+        n_s, n_a = p.shape[:2]
 
-        self.assertNumpyEqual(P_pi_star_, P_pi_star)
+        # Total of |A| ^ |S| greedy policies, test feasible only on small MDPs
+        all_policies = np.array(np.meshgrid(*np.tile(np.arange(n_a), (n_s, 1)))).T.reshape(-1, n_s)
+
+        for pi_idx in all_policies:
+            pi = np.zeros((n_s, n_a))
+            pi[np.arange(n_s), pi_idx] = 1
+
+            P_pi = np.einsum('ijk,ij->ik', p, pi)
+            P_star_pi = stationary_transition_matrix(P_pi, epsilon=self.epsilon, max_iter=self.max_iter)
+
+
+            self.assertNumpyEqual(P_star_pi.sum(axis=1), np.ones(n_s))
+
+            P_star_pi_ = P_star_pi @ P_pi
+
+            error = np.abs(P_star_pi_ - P_star_pi).max()
+            
+            self.assertLessEqual(error, self.epsilon * np.sum(P_pi, axis=0).max())
     
     @parameterized.expand(avg_rew_policy_evaluation_parameters)
-    def test_gain(self, name, pi):
+    def test_gain_optimal_pi_vs_all_policies(self, name, pi_star):
         env_config = get_env_config('gridworld')
         env_config.grid = grids_and_policies[name]['grid']
         env = GridworldEnv(env_config)
 
         p, r = env.get_p_and_r()
 
-        rho_pi = compute_gain(p, r, pi, epsilon=self.epsilon, max_iter=self.max_iter)
+        n_s, n_a = p.shape[:2]
+
+        rho_pi_star = compute_gain(p, r, pi_star, epsilon=self.epsilon, max_iter=self.max_iter)
+
+        # Total of |A| ^ |S| greedy policies, test feasible only on small MDPs
+        all_policies = np.array(np.meshgrid(*np.tile(np.arange(n_a), (n_s, 1)))).T.reshape(-1, n_s)
+
+        for pi_idx in all_policies:
+            pi = np.zeros((n_s, n_a))
+            pi[np.arange(n_s), pi_idx] = 1
+
+            rho_pi = compute_gain(p, r, pi, epsilon=self.epsilon, max_iter=self.max_iter)
+
+            self.assertLessEqual(rho_pi_star.max(), rho_pi.max(), msg={
+                'pi': pi,
+                'rho_pi': rho_pi,
+                'pi_star': pi_star,
+                'rho_pi_star': rho_pi_star
+            })
     
 
     @parameterized.expand([(name,) for name in grids_and_policies])
-    def test_stat_mat_prod_val_func_eq_zero(self, name):
+    def test_stat_mat_prod_val_func_eq_zero_all_policies(self, name):
         env_config = get_env_config('gridworld')
         env_config.grid = grids_and_policies[name]['grid']
         env = GridworldEnv(env_config)
