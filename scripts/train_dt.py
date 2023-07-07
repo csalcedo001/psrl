@@ -1,23 +1,15 @@
 import os
 import torch
-from torch.utils.data import DataLoader
 import torch.nn.functional as F
 from transformers import Trainer, TrainingArguments, DecisionTransformerConfig, DecisionTransformerModel
 import pickle
-from tqdm import tqdm
 import numpy as np
 import random
-from datasets import Dataset
-from accelerate import Accelerator
+from datasets import Dataset, DatasetDict
 
-from psrl.config import get_env_config
-from psrl.utils import env_name_map
 
-from arg_utils import get_experiment_parser, process_experiment_config
-from trajectory_dataset import DecisionTransformerDataset
-from metrics import compute_raw_accuracy, compute_last_action_accuracy
-from utils import load_experiment_config, set_seed, get_file_path_from_config, get_experiment_path_from_config
-
+from setup_script import setup_script
+from utils import get_file_path_from_config
 
 
 
@@ -35,7 +27,6 @@ class DecisionTransformerGymDataCollator:
     n_traj: int = 0 # to store the number of trajectories in the dataset
 
     def __init__(self, dataset) -> None:
-        print(type(dataset))
         self.act_dim = len(dataset[0]["actions"][0])
         self.state_dim = len(dataset[0]["observations"][0])
         self.dataset = dataset
@@ -115,7 +106,7 @@ class DecisionTransformerGymDataCollator:
         timesteps = torch.from_numpy(np.concatenate(timesteps, axis=0)).long()
         mask = torch.from_numpy(np.concatenate(mask, axis=0)).float()
 
-        return {
+        data = {
             "states": s,
             "actions": a,
             "rewards": r,
@@ -123,6 +114,15 @@ class DecisionTransformerGymDataCollator:
             "timesteps": timesteps,
             "attention_mask": mask,
         }
+
+        # print("STATE: ", s.shape)
+        # print("ACTION:", a.shape)
+        # print("REWARD:", r.shape)
+        # print("RTG:   ", rtg.shape)
+        # print("TIME:  ", timesteps.shape)
+        # print("MASK:  ", mask.shape)
+
+        return data
 
 class TrainableDT(DecisionTransformerModel):
     def __init__(self, config):
@@ -149,30 +149,8 @@ class TrainableDT(DecisionTransformerModel):
 
 
 # Get experiment configuration
-parser = get_experiment_parser()
-args = parser.parse_args()
-config_path = args.config
-exp_config = load_experiment_config(config_path)
-exp_config = process_experiment_config(args, exp_config)
-
-
-
-# Setup experiment
-set_seed(exp_config.seed)
-print("*** SEED:", exp_config.seed)
-
-data_dir = get_experiment_path_from_config(exp_config, mkdir=True, root_type='data')
-accelerator = Accelerator(project_dir=data_dir)
-device = accelerator.device
-
-
-
-# Get environment
-env_class = env_name_map[exp_config.env]
-env_config = get_env_config(exp_config.env)
-env_config['gamma'] = exp_config.gamma
-env_config['no_goal'] = exp_config.no_goal
-env = env_class(env_config)
+exp_config, env, agent, accelerator = setup_script(mode='debug')
+print("Setup complete.")
 
 
 
@@ -205,20 +183,15 @@ processed_trajectory_data = {
     'rewards': [rewards],
     'dones': [dones],
 }
-ds = Dataset.from_dict(processed_trajectory_data)
-# print(np.array(ds[0]['observations']).shape)
-# print(np.array(ds['observations']).shape)
-# processed_trajectory_data[0] = processed_trajectory_data
+ds_train = Dataset.from_dict(processed_trajectory_data)
 
-# collator = DecisionTransformerGymDataCollator(processed_trajectory_data)
-# collator.max_len = exp_config.seq_len
-# collator.max_ep_len = exp_config.training_steps
+ds = DatasetDict({'train': ds_train})
 
-# dataset = DecisionTransformerDataset(
-#     env,
-#     processed_trajectory_data,
-#     seq_len=exp_config.seq_len,
-# )
+print("Dataset:", ds)
+print("Observations shape:", np.array(ds['train']['observations']).shape)
+print("Actions shape:     ", np.array(ds['train']['actions']).shape)
+print("Rewards shape:     ", np.array(ds['train']['rewards']).shape)
+print("Dones shape:       ", np.array(ds['train']['dones']).shape)
 
 
 
@@ -226,19 +199,14 @@ ds = Dataset.from_dict(processed_trajectory_data)
 # Get model
 model_config = DecisionTransformerConfig()
 
+model_config.max_length = exp_config.seq_len
 model_config.state_dim = env.observation_space.n
 model_config.act_dim = env.action_space.n
 model_config.max_ep_len = exp_config.training_steps
-# model_config.vocab_size = vocab_size
-# model_config.hidden_state = vocab_size
-model_config.n_positions = exp_config.seq_len
-# model_config.n_ctx = exp_config.seq_len
-# model_config.n_embd = exp_config.n_embd
-
-# print(model_config)
 
 model = TrainableDT(model_config)
-model.to(device)
+print("Model:")
+print(model)
 
 
 
@@ -246,7 +214,7 @@ model.to(device)
 training_args = TrainingArguments(
     output_dir="output/",
     remove_unused_columns=False,
-    num_train_epochs=120,
+    num_train_epochs=2,
     per_device_train_batch_size=64,
     learning_rate=1e-4,
     weight_decay=1e-4,
@@ -258,8 +226,8 @@ training_args = TrainingArguments(
 trainer = Trainer(
     model=model,
     args=training_args,
-    train_dataset=ds,
-    data_collator=DecisionTransformerGymDataCollator,
+    train_dataset=ds['train'],
+    data_collator=DecisionTransformerGymDataCollator(ds['train']),
 )
 
 trainer.train()
