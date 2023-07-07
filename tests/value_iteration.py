@@ -271,7 +271,7 @@ avg_rew_policy_evaluation_parameters = [
 
 class TestAverageRewardValueIteration(TestCase):
     epsilon = 1e-3      # Threshold of absolute maximum difference
-    max_iter = 10000    # Maximum number of iterations
+    max_iter = 1000     # Maximum number of iterations
     
     @parameterized.expand([(name,) for name in grids_and_policies])
     def test_stationary_matrix_all_policies(self, name):
@@ -291,21 +291,12 @@ class TestAverageRewardValueIteration(TestCase):
             pi[np.arange(n_s), pi_idx] = 1
 
             P_pi = np.einsum('ijk,ij->ik', p, pi)
-            P_star_pi = stationary_transition_matrix(P_pi, epsilon=self.epsilon, max_iter=self.max_iter)
 
+            # Computes exact solution given enough iterations
+            P_star_pi = stationary_transition_matrix(P_pi, epsilon=0, max_iter=10000)
 
             self.assertNumpyEqual(P_star_pi.sum(axis=1), np.ones(n_s))
-
-            P_star_pi_ = P_star_pi @ P_pi
-
-            error = np.abs(P_star_pi_ - P_star_pi).max()
-            
-            self.assertLessEqual(error, self.epsilon, msg={
-                'pi': pi,
-                'P_star_pi': P_star_pi,
-                'P_star_pi_': P_star_pi_,
-                'P_pi': P_pi,
-            })
+            self.assertNumpyEqual(P_star_pi, P_star_pi @ P_pi)
     
     @parameterized.expand(avg_rew_policy_evaluation_parameters)
     def test_gain_optimal_pi_vs_all_policies(self, name, pi_star):

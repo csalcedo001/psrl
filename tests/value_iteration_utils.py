@@ -100,7 +100,7 @@ def stationary_transition_matrix(P_pi, epsilon, max_iter):
         P_pi_star += P_pi_pow @ P_pi_star
         P_pi_star /= 2.0
 
-        if np.abs(P_pi_star - P_pi_star @ P_pi).max() < epsilon:
+        if np.abs(P_pi_star - P_pi_star @ P_pi).max() <= epsilon:
             break
 
         P_pi_pow = P_pi_pow @ P_pi_pow
@@ -123,7 +123,7 @@ def compute_gain(p, r, pi, epsilon, max_iter):
     P_pi = np.einsum('ijk,ij->ik', p, pi)
     R_pi = np.einsum('ij,ij->i', r, pi)
 
-    P_pi_star = stationary_transition_matrix(P_pi, epsilon, max_iter)
+    P_pi_star = stationary_transition_matrix(P_pi, 0, max_iter)
 
     rho_pi = P_pi_star @ R_pi
 
