@@ -274,7 +274,7 @@ class TestAverageRewardValueIteration(TestCase):
     max_iter = 1000     # Maximum number of iterations
     
     @parameterized.expand([(name,) for name in grids_and_policies])
-    def test_stationary_matrix_all_policies(self, name):
+    def test_stat_mat_zero_error_all_policies(self, name):
         env_config = get_env_config('gridworld')
         env_config.grid = grids_and_policies[name]['grid']
         env = GridworldEnv(env_config)
@@ -297,6 +297,34 @@ class TestAverageRewardValueIteration(TestCase):
 
             self.assertNumpyEqual(P_star_pi.sum(axis=1), np.ones(n_s))
             self.assertNumpyEqual(P_star_pi, P_star_pi @ P_pi)
+    
+    @parameterized.expand([(name,) for name in grids_and_policies])
+    def test_stat_mat_epsilon_close_all_policies(self, name):
+        env_config = get_env_config('gridworld')
+        env_config.grid = grids_and_policies[name]['grid']
+        env = GridworldEnv(env_config)
+
+        p, r = env.get_p_and_r()
+
+        n_s, n_a = p.shape[:2]
+
+        # Total of |A| ^ |S| greedy policies, test feasible only on small MDPs
+        all_policies = np.array(np.meshgrid(*np.tile(np.arange(n_a), (n_s, 1)))).T.reshape(-1, n_s)
+
+        for pi_idx in all_policies:
+            pi = np.zeros((n_s, n_a))
+            pi[np.arange(n_s), pi_idx] = 1
+
+            P_pi = np.einsum('ijk,ij->ik', p, pi)
+
+            # Computes exact solution given enough iterations
+            P_star_pi = stationary_transition_matrix(P_pi, epsilon=0, max_iter=10000)
+            P_star_pi_hat = stationary_transition_matrix(P_pi, epsilon=self.epsilon, max_iter=self.max_iter)
+
+            self.assertNumpyEqual(P_star_pi_hat.sum(axis=1), np.ones(n_s))
+
+            error = np.abs(P_star_pi_hat - P_star_pi).max()
+            self.assertLessEqual(error, self.epsilon)
     
     @parameterized.expand(avg_rew_policy_evaluation_parameters)
     def test_gain_optimal_pi_vs_all_policies(self, name, pi_star):
