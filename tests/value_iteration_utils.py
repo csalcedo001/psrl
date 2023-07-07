@@ -99,11 +99,13 @@ def stationary_transition_matrix(P_pi, epsilon, max_iter):
     for n in range(1, max_iter + 1):
         P_pi_star += P_pi_pow @ P_pi_star
         P_pi_star /= 2.0
+        P_pi_star /= P_pi_star.sum(axis=1, keepdims=True)
 
         if np.abs(P_pi_star - P_pi_star @ P_pi).max() <= epsilon:
             break
 
         P_pi_pow = P_pi_pow @ P_pi_pow
+        P_pi_pow /= P_pi_pow.sum(axis=1, keepdims=True)
     
     P_pi_star = P_pi_star.astype(input_dtype)
     
