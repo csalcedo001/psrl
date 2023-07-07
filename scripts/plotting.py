@@ -349,7 +349,7 @@ def save_accuracy_plot(accuracies, file_path, title=None):
     plt.savefig(file_path)
     plt.close(fig)
 
-def save_regret_plot(agent_regrets, file_path, title=None):
+def save_regret_plot(agent_regrets, file_path, title=None, log_scale=False):
     print("Processing regret plot...")
 
     fig, ax = plt.subplots()
@@ -370,7 +370,11 @@ def save_regret_plot(agent_regrets, file_path, title=None):
         c = cmap(i % 10)
 
         ax.fill_between(x_index, min_regret, max_regret, alpha=0.5, color=c)
-        ax.plot(x_index, mean_regret, label=agent_plot_name_map[agent], color=c)
+
+        if not log_scale:
+            ax.plot(x_index, mean_regret, label=agent_plot_name_map[agent], color=c)
+        else:
+            ax.loglog(x_index, mean_regret, label=agent_plot_name_map[agent], color=c)
 
     plt.legend()
 

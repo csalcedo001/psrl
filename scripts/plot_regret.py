@@ -74,16 +74,19 @@ for agent in agents:
 
 
 # Plot regret
-filename = 'regret.png'
-root = exp_config.plots_path
+root = exp_config.plots_dir
 experiment_dir = '{env}_{plot_steps}'.format(**exp_config)
 file_dir = os.path.join(root, experiment_dir)
 os.makedirs(file_dir, exist_ok=True)
 
-file_path = os.path.join(file_dir, filename)
-
 save_regret_plot(
     agent_regrets,
-    file_path,
+    os.path.join(file_dir, 'regret.png'),
     title='Exploration Regret',
+)
+save_regret_plot(
+    agent_regrets,
+    os.path.join(file_dir, 'regret_log_log.png'),
+    title='Exploration Regret',
+    log_scale=True,
 )
