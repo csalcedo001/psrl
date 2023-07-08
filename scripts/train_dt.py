@@ -1,8 +1,6 @@
 import copy
 import glob
-import torch
-import torch.nn.functional as F
-from transformers import Trainer, TrainingArguments, DecisionTransformerConfig, DecisionTransformerModel
+from transformers import Trainer, TrainingArguments, DecisionTransformerConfig
 import numpy as np
 from datasets import Dataset, DatasetDict
 
@@ -10,31 +8,8 @@ from datasets import Dataset, DatasetDict
 from setup_script import setup_script
 from file_system import load_pickle
 from trajectory_dataset import trajectories_to_dt_dataset_format, DecisionTransformerGymDataCollator
+from models import TrainableDT
 from utils import get_file_path_from_config
-
-
-
-
-class TrainableDT(DecisionTransformerModel):
-    def __init__(self, config):
-        super().__init__(config)
-
-    def forward(self, **kwargs):
-        output = super().forward(**kwargs)
-        # add the DT loss
-        action_preds = output[1]
-        action_targets = kwargs["actions"]
-        attention_mask = kwargs["attention_mask"]
-        act_dim = action_preds.shape[2]
-        action_preds = action_preds.reshape(-1, act_dim)[attention_mask.reshape(-1) > 0]
-        action_targets = action_targets.reshape(-1, act_dim)[attention_mask.reshape(-1) > 0]
-        
-        loss = torch.mean((action_preds - action_targets) ** 2)
-
-        return {"loss": loss}
-
-    def original_forward(self, **kwargs):
-        return super().forward(**kwargs)
 
 
 
