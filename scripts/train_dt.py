@@ -104,10 +104,11 @@ training_args = TrainingArguments(
     warmup_ratio=0.1,
     optim="adamw_torch",
     max_grad_norm=0.25,
-    save_steps=10,
-    logging_steps=1,
-    eval_steps=1,
-    # evaluation_strategy='steps',
+    save_steps=1000,
+    logging_steps=50,
+    eval_steps=50,
+    save_total_limit=5,
+    resume_from_checkpoint=True,
 )
 
 trainer = Trainer(
