@@ -2,8 +2,6 @@ import torch
 from tqdm import tqdm
 
 def compute_metrics(model, data_loader, criterion):
-    vocab_size = data_loader.dataset.get_vocab_size()
-
     loss = 0
     total_batch_loss = 0
     hits = 0
@@ -15,7 +13,8 @@ def compute_metrics(model, data_loader, criterion):
     for i, (x, y) in enumerate(data_loader):
         # Compute loss
         output = model(input_ids=x)
-        y_logits = output.logits.view(-1, vocab_size)
+        b_size = output.logits.shape[0]
+        y_logits = output.logits.view(b_size, -1)
         batch_loss = criterion(y_logits, y.view(-1))
         total_batch_loss += batch_loss.item()
         loss = total_batch_loss / (i + 1)
