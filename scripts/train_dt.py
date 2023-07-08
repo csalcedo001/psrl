@@ -95,7 +95,7 @@ print(model)
 
 # Train
 training_args = TrainingArguments(
-    output_dir="output/",
+    output_dir=get_file_path_from_config('dt_checkpoints', exp_config, mkdir=True),
     remove_unused_columns=False,
     num_train_epochs=exp_config.epochs,
     per_device_train_batch_size=64,
@@ -104,7 +104,7 @@ training_args = TrainingArguments(
     warmup_ratio=0.1,
     optim="adamw_torch",
     max_grad_norm=0.25,
-    save_steps=1,
+    save_steps=10,
     logging_steps=1,
     eval_steps=1,
     # evaluation_strategy='steps',
