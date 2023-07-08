@@ -154,7 +154,8 @@ with torch.no_grad():
             loss = total_batch_loss / (i + 1)
 
             # Compute accuracy
-            y_hat = y_logits
+            y_hat = y_logits.argmax(dim=1)
+            y = y.argmax(dim=1)
             hits += torch.sum(y == y_hat).item()
             hits_and_misses += torch.ones_like(y).sum().item()
             accuracy = hits / hits_and_misses

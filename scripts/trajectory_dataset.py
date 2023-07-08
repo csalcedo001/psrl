@@ -190,11 +190,11 @@ def trajectories_to_dt_dataset_format(trajectories, num_states, num_actions, max
 
         observations_idx = observations
         observations = np.zeros((max_ep_len, num_states))
-        observations[np.arange(max_ep_len), observations_idx]
+        observations[np.arange(max_ep_len), observations_idx] = 1
 
         actions_idx = actions
         actions = np.zeros((max_ep_len, num_actions))
-        actions[np.arange(max_ep_len), actions_idx]
+        actions[np.arange(max_ep_len), actions_idx] = 1
 
         rewards = np.array([rewards]).T
         dones = np.array([dones]).T

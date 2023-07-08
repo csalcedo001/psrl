@@ -108,7 +108,7 @@ training_args = TrainingArguments(
     logging_steps=50,
     eval_steps=50,
     save_total_limit=5,
-    resume_from_checkpoint=True,
+    # resume_from_checkpoint=True,
 )
 
 trainer = Trainer(
