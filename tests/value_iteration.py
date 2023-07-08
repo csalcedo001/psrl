@@ -320,7 +320,7 @@ class TestAverageRewardValueIteration(TestCase):
 
             # Computes exact solution given enough iterations
             P_star_pi = stationary_transition_matrix(P_pi, epsilon=0, max_iter=10000)
-            P_star_pi_hat = stationary_transition_matrix(P_pi, epsilon=self.epsilon, max_iter=self.max_iter)
+            P_star_pi_hat = stationary_transition_matrix(P_pi, epsilon=1/self.max_iter, max_iter=self.max_iter)
 
             self.assertNumpyEqual(P_star_pi_hat.sum(axis=1), np.ones(n_s))
 
@@ -373,10 +373,10 @@ class TestAverageRewardValueIteration(TestCase):
         for pi_idx in all_policies:
             pi = np.zeros((n_s, n_a))
             pi[np.arange(n_s), pi_idx] = 1
-            v_pi = average_reward_policy_evaluation(p, r, pi, epsilon=self.epsilon, max_iter=self.max_iter)
+            v_pi = average_reward_policy_evaluation(p, r, pi, epsilon=0, max_iter=10000)
 
             P_pi = np.einsum('ijk,ij->ik', p, pi)
-            P_star_pi = stationary_transition_matrix(P_pi, epsilon=self.epsilon, max_iter=self.max_iter)
+            P_star_pi = stationary_transition_matrix(P_pi, epsilon=0, max_iter=10000)
 
             self.assertLessEqual(np.abs(P_star_pi @ v_pi).max(), self.epsilon, msg={
                 'pi': pi,
@@ -384,6 +384,51 @@ class TestAverageRewardValueIteration(TestCase):
                 'v_pi': v_pi,
                 'P_star_pi @ v_pi': P_star_pi @ v_pi
             })
+
+    @parameterized.expand([(name,) for name in grids_and_policies])
+    def test_p_star_pi_prod_v_pi_zero_all_policies(self, name):
+        env_config = get_env_config('gridworld')
+        env_config.grid = grids_and_policies[name]['grid']
+        env = GridworldEnv(env_config)
+
+        p, r = env.get_p_and_r()
+
+        n_s, n_a = p.shape[:2]
+
+        # Total of |A| ^ |S| greedy policies, test feasible only on small MDPs
+        all_policies = np.array(np.meshgrid(*np.tile(np.arange(n_a), (n_s, 1)))).T.reshape(-1, n_s)
+
+        for pi_idx in all_policies:
+            pi = np.zeros((n_s, n_a))
+            pi[np.arange(n_s), pi_idx] = 1
+            P_pi = np.einsum('ijk,ij->ik', p, pi)
+            P_star_pi = stationary_transition_matrix(P_pi, epsilon=0, max_iter=10000)
+            v_pi = average_reward_policy_evaluation(p, r, pi, epsilon=self.epsilon, max_iter=self.max_iter)
+
+            self.assertNumpyEqual(P_star_pi @ v_pi, np.zeros(n_s))
+    
+    @parameterized.expand([(name,) for name in grids_and_policies])
+    def test_bellman_equation_v_pi_all_policies(self, name):
+        env_config = get_env_config('gridworld')
+        env_config.grid = grids_and_policies[name]['grid']
+        env = GridworldEnv(env_config)
+
+        p, r = env.get_p_and_r()
+
+        n_s, n_a = p.shape[:2]
+
+        # Total of |A| ^ |S| greedy policies, test feasible only on small MDPs
+        all_policies = np.array(np.meshgrid(*np.tile(np.arange(n_a), (n_s, 1)))).T.reshape(-1, n_s)
+
+        for pi_idx in all_policies:
+            pi = np.zeros((n_s, n_a))
+            pi[np.arange(n_s), pi_idx] = 1
+            P_pi = np.einsum('ijk,ij->ik', p, pi)
+            R_pi = np.einsum('ij,ij->i', r, pi)
+            rho_pi = compute_gain(p, r, pi, epsilon=0, max_iter=10000)
+            v_pi = average_reward_policy_evaluation(p, r, pi, epsilon=0, max_iter=10000)
+
+            self.assertNumpyEqual(rho_pi + v_pi, R_pi + P_pi @ v_pi)
 
     
     @parameterized.expand(avg_rew_policy_evaluation_parameters)

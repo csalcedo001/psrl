@@ -115,11 +115,11 @@ def average_reward_policy_evaluation(p, r, pi, epsilon, max_iter):
     P_pi = np.einsum('ijk,ij->ik', p, pi)
     R_pi = np.einsum('ij,ij->i', r, pi)
 
-    P_pi_star = stationary_transition_matrix(P_pi, epsilon, max_iter)
+    P_star_pi = stationary_transition_matrix(P_pi, 0, 10000)
 
-    v_pi_star = (np.linalg.inv(np.eye(*P_pi.shape) - P_pi + P_pi_star) - P_pi_star) @ R_pi
+    v_pi = (np.linalg.inv(np.eye(*P_pi.shape) - P_pi + P_star_pi) - P_star_pi) @ R_pi
 
-    return v_pi_star
+    return v_pi
 
 def compute_gain(p, r, pi, epsilon, max_iter):
     P_pi = np.einsum('ijk,ij->ik', p, pi)
