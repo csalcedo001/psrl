@@ -328,7 +328,7 @@ class TestAverageRewardValueIteration(TestCase):
             self.assertLessEqual(error, self.epsilon)
     
     @parameterized.expand(avg_rew_policy_evaluation_parameters)
-    def test_gain_optimal_pi_vs_all_policies(self, name, pi_star):
+    def test_gain_pi_star_vs_all_policies(self, name, pi_star):
         env_config = get_env_config('gridworld')
         env_config.grid = grids_and_policies[name]['grid']
         env = GridworldEnv(env_config)
@@ -408,7 +408,7 @@ class TestAverageRewardValueIteration(TestCase):
             self.assertNumpyEqual(P_star_pi @ v_pi, np.zeros(n_s))
     
     @parameterized.expand([(name,) for name in grids_and_policies])
-    def test_bellman_equation_v_pi_all_policies(self, name):
+    def test_v_pi_on_bellman_eq_vs_all_policies(self, name):
         env_config = get_env_config('gridworld')
         env_config.grid = grids_and_policies[name]['grid']
         env = GridworldEnv(env_config)
@@ -429,6 +429,19 @@ class TestAverageRewardValueIteration(TestCase):
             v_pi = average_reward_policy_evaluation(p, r, pi, epsilon=0, max_iter=10000)
 
             self.assertNumpyEqual(rho_pi + v_pi, R_pi + P_pi @ v_pi)
+    
+    @parameterized.expand(avg_rew_policy_evaluation_parameters)
+    def test_pi_star_bellman_opt_eq(self, name, pi_star):
+        env_config = get_env_config('gridworld')
+        env_config.grid = grids_and_policies[name]['grid']
+        env = GridworldEnv(env_config)
+
+        p, r = env.get_p_and_r()
+
+        v_pi_star = average_reward_policy_evaluation(p, r, pi_star, epsilon=self.epsilon, max_iter=self.max_iter)
+        rho_pi_star = compute_gain(p, r, pi_star, epsilon=self.epsilon, max_iter=self.max_iter)
+
+        self.assertNumpyEqual(rho_pi_star + v_pi_star, np.max(r + np.einsum('ijk,k->ij', p, v_pi_star), axis=1))
 
     
     @parameterized.expand(avg_rew_policy_evaluation_parameters)
@@ -438,6 +451,9 @@ class TestAverageRewardValueIteration(TestCase):
         env = GridworldEnv(env_config)
 
         p, r = env.get_p_and_r()
+
+        R_pi_star = np.einsum('ij,ij->i', r, pi_star)
+        P_pi_star = np.einsum('ijk,ij->ik', p, pi_star)
         v_pi_star = average_reward_policy_evaluation(p, r, pi_star, epsilon=self.epsilon, max_iter=self.max_iter)
 
         n_s, n_a = p.shape[:2]
@@ -448,9 +464,12 @@ class TestAverageRewardValueIteration(TestCase):
         for pi_idx in all_policies:
             pi = np.zeros((n_s, n_a))
             pi[np.arange(n_s), pi_idx] = 1
-            v_pi = average_reward_policy_evaluation(p, r, pi, epsilon=self.epsilon, max_iter=self.max_iter)
 
-            self.assertTrue(np.all(v_pi_star - v_pi > 0), msg=({
+            R_pi = np.einsum('ij,ij->i', r, pi)
+            P_pi = np.einsum('ijk,ij->ik', p, pi)
+            v_pi = average_reward_policy_evaluation(p, r, pi, epsilon=0, max_iter=10000)
+
+            self.assertTrue(np.all((R_pi_star + P_pi_star @ v_pi_star) - (R_pi + P_pi @ v_pi) > 0), msg=({
                 'r': r,
                 'p': p,
                 'v_pi_star': v_pi_star,
