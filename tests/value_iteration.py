@@ -297,6 +297,7 @@ class TestAverageRewardValueIteration(TestCase):
 
             self.assertNumpyEqual(P_star_pi.sum(axis=1), np.ones(n_s))
             self.assertNumpyEqual(P_star_pi, P_star_pi @ P_pi)
+            self.assertNumpyEqual(P_star_pi, P_star_pi @ P_star_pi)
     
     @parameterized.expand([(name,) for name in grids_and_policies])
     def test_stat_mat_epsilon_close_all_policies(self, name):
@@ -347,7 +348,7 @@ class TestAverageRewardValueIteration(TestCase):
 
             rho_pi = compute_gain(p, r, pi, epsilon=self.epsilon, max_iter=self.max_iter)
 
-            self.assertLessEqual(rho_pi_star.max(), rho_pi.max(), msg={
+            self.assertLessEqual(rho_pi.max(), rho_pi_star.max(), msg={
                 'pi': pi,
                 'rho_pi': rho_pi,
                 'pi_star': pi_star,
