@@ -1,18 +1,57 @@
-import os
+import copy
+import glob
 import torch
 import torch.nn.functional as F
 from transformers import Trainer, TrainingArguments, DecisionTransformerConfig, DecisionTransformerModel
-import pickle
 import numpy as np
 import random
 from datasets import Dataset, DatasetDict
 
 
 from setup_script import setup_script
+from file_system import load_pickle
 from utils import get_file_path_from_config
 
 
 
+
+def trajectories_to_dt_dataset_format(trajectories, num_states, num_actions):
+    dataset_observations = []
+    dataset_actions = []
+    dataset_rewards = []
+    dataset_dones = []
+
+    for trajectory in trajectories:
+        observations = []
+        actions = []
+        rewards = []
+        dones = []
+
+        for transition in trajectory:
+            obs, act, rew, _ = transition
+
+            obs = F.one_hot(torch.LongTensor([obs]), num_classes=num_states).float()[0].detach().numpy()
+            act = F.one_hot(torch.LongTensor([act]), num_classes=num_actions).float()[0].detach().numpy()
+
+            observations.append(obs)
+            actions.append(act)
+            rewards.append(rew)
+            dones.append(False)
+        
+        dataset_observations.append(observations)
+        dataset_actions.append(actions)
+        dataset_rewards.append(rewards)
+        dataset_dones.append(dones)
+
+
+    trajectories_data = {
+        'observations': dataset_observations,
+        'actions': dataset_actions,
+        'rewards': dataset_rewards,
+        'dones': dataset_dones,
+    }
+
+    return trajectories_data
 
 class DecisionTransformerGymDataCollator:
     return_tensors: str = "pt"
@@ -61,7 +100,7 @@ class DecisionTransformerGymDataCollator:
         )
         # a batch of dataset features
         s, a, r, d, rtg, timesteps, mask = [], [], [], [], [], [], []
-        
+
         for ind in batch_inds:
             # for feature in features:
             feature = self.dataset[int(ind)]
@@ -150,48 +189,52 @@ class TrainableDT(DecisionTransformerModel):
 
 # Get experiment configuration
 exp_config, env, agent, accelerator = setup_script(mode='debug')
-print("Setup complete.")
 
 
 
 # Get dataset of trajectories
-checkpoints_path = os.path.join(os.path.dirname(__file__), exp_config.data_dir)
-os.makedirs(checkpoints_path, exist_ok=True)
+data_config_pattern = copy.deepcopy(exp_config)
+data_config_pattern.seed = '****'
+data_path_pattern = get_file_path_from_config('trajectories.pkl', data_config_pattern)
+paths = glob.glob(data_path_pattern)
+paths.sort()
 
-trajectories_path = get_file_path_from_config('trajectories.pkl', exp_config)
-with open(trajectories_path, 'rb') as f:
-    raw_trajectory = pickle.load(f)
+# Load trajectories
+trajectories = []
+for trajectory_path in paths:
+    trajectory = load_pickle(trajectory_path)
+    trajectories.append(trajectory)
 
-observations = []
-actions = []
-rewards = []
-dones = []
-for transition in raw_trajectory:
-    obs, act, rew, _ = transition
+# Split into train and val sets
+train_val_split_ratio = 0.9
+train_trajectories = trajectories[:max(int(len(trajectories) * train_val_split_ratio), 1)]
+val_trajectories = trajectories[int(len(trajectories) * train_val_split_ratio):]
 
-    obs = F.one_hot(torch.LongTensor([obs]), num_classes=env.observation_space.n).float()[0].detach().numpy()
-    act = F.one_hot(torch.LongTensor([act]), num_classes=env.action_space.n).float()[0].detach().numpy()
+# Get dataset of trajectories
+train_trajectory_data = trajectories_to_dt_dataset_format(
+    train_trajectories,
+    env.observation_space.n,
+    env.action_space.n,
+)
+val_trajectory_data = trajectories_to_dt_dataset_format(
+    val_trajectories,
+    env.observation_space.n,
+    env.action_space.n,
+)
 
-    observations.append(obs)
-    actions.append(act)
-    rewards.append(rew)
-    dones.append(False)
+train_trajectory_dataset = Dataset.from_dict(train_trajectory_data)
+val_trajectory_dataset = Dataset.from_dict(val_trajectory_data)
 
-processed_trajectory_data = {
-    'observations': [observations],
-    'actions': [actions],
-    'rewards': [rewards],
-    'dones': [dones],
-}
-ds_train = Dataset.from_dict(processed_trajectory_data)
+trajectory_dataset = DatasetDict({
+    'train': train_trajectory_dataset,
+    'val': val_trajectory_dataset,
+})
 
-ds = DatasetDict({'train': ds_train})
-
-print("Dataset:", ds)
-print("Observations shape:", np.array(ds['train']['observations']).shape)
-print("Actions shape:     ", np.array(ds['train']['actions']).shape)
-print("Rewards shape:     ", np.array(ds['train']['rewards']).shape)
-print("Dones shape:       ", np.array(ds['train']['dones']).shape)
+print("Dataset:", trajectory_dataset)
+print("Observations shape:", np.array(trajectory_dataset['train']['observations']).shape)
+print("Actions shape:     ", np.array(trajectory_dataset['train']['actions']).shape)
+print("Rewards shape:     ", np.array(trajectory_dataset['train']['rewards']).shape)
+print("Dones shape:       ", np.array(trajectory_dataset['train']['dones']).shape)
 
 
 
@@ -226,8 +269,8 @@ training_args = TrainingArguments(
 trainer = Trainer(
     model=model,
     args=training_args,
-    train_dataset=ds['train'],
-    data_collator=DecisionTransformerGymDataCollator(ds['train']),
+    train_dataset=trajectory_dataset['train'],
+    data_collator=DecisionTransformerGymDataCollator(trajectory_dataset['train']),
 )
 
 trainer.train()
