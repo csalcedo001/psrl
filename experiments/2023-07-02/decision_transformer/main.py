@@ -3,13 +3,11 @@ from datasets import load_dataset
 import numpy as np
 import random
 import torch
-import gym
 import wandb
+from tqdm import tqdm
 
 
-wandb.init(project="psrl")
 
-dataset = load_dataset("edbeeching/decision_transformer_gym_replay", "halfcheetah-expert-v2")
 
 # @dataclass
 class DecisionTransformerGymDataCollator:
@@ -31,7 +29,7 @@ class DecisionTransformerGymDataCollator:
         # calculate dataset stats for normalization of states
         states = []
         traj_lens = []
-        for obs in dataset["observations"]:
+        for obs in tqdm(dataset["observations"]):
             states.extend(obs)
             traj_lens.append(len(obs))
         self.n_traj = len(traj_lens)
@@ -146,6 +144,24 @@ class TrainableDT(DecisionTransformerModel):
         return super().forward(**kwargs)
 
 
+# Setup project
+wandb.init(project="psrl")
+
+
+# Get dataset
+dataset = load_dataset("edbeeching/decision_transformer_gym_replay", "halfcheetah-expert-v2")
+
+print(dataset)
+print("Observations shape:", np.array(dataset['train']['observations']).shape)
+print("Actions shape:     ", np.array(dataset['train']['actions']).shape)
+print("Rewards shape:     ", np.array(dataset['train']['rewards']).shape)
+print("Dones shape:       ", np.array(dataset['train']['dones']).shape)
+
+data_collator = DecisionTransformerGymDataCollator(dataset['train'])
+print("Finished data processing.")
+
+
+
 # model_name = "edbeeching/decision-transformer-gym-hopper-expert"
 # model = DecisionTransformerModel.from_pretrained(model_name)
 model_config = DecisionTransformerConfig()
@@ -159,7 +175,7 @@ print(model)
 training_args = TrainingArguments(
     output_dir="output/",
     remove_unused_columns=False,
-    num_train_epochs=1,
+    num_train_epochs=5,
     per_device_train_batch_size=64,
     learning_rate=1e-4,
     weight_decay=1e-4,
@@ -172,7 +188,7 @@ trainer = Trainer(
     model=model,
     args=training_args,
     train_dataset=dataset["train"],
-    data_collator=DecisionTransformerGymDataCollator(dataset['train']),
+    data_collator=data_collator,
 )
 
 trainer.train()
