@@ -126,10 +126,9 @@ with torch.no_grad():
 
         pbar = tqdm(total=len(data_loader))
         for i, batch in enumerate(data_loader):
-            x = batch['actions']
             y = batch['actions']
 
-            b_size = x.shape[0]
+            b_size = y.shape[0]
 
             # Compute loss
             output = model(**batch)

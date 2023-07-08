@@ -66,7 +66,7 @@ val_data_loader = DataLoader(
     shuffle=True,
     drop_last=True,
 )
-print("Finished setting up datsets.")
+print("Finished setting up datasets.")
 
 
 
