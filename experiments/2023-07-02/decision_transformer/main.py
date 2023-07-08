@@ -102,6 +102,7 @@ class DecisionTransformerGymDataCollator:
         timesteps = torch.from_numpy(np.concatenate(timesteps, axis=0)).long()
         mask = torch.from_numpy(np.concatenate(mask, axis=0)).float()
 
+
         data = {
             "states": s,
             "actions": a,
@@ -111,12 +112,12 @@ class DecisionTransformerGymDataCollator:
             "attention_mask": mask,
         }
 
-        # print("STATE: ", s.shape)
-        # print("ACTION:", a.shape)
-        # print("REWARD:", r.shape)
-        # print("RTG:   ", rtg.shape)
-        # print("TIME:  ", timesteps.shape)
-        # print("MASK:  ", mask.shape)
+        print("STATE: ", s.shape)
+        print("ACTION:", a.shape)
+        print("REWARD:", r.shape)
+        print("RTG:   ", rtg.shape)
+        print("TIME:  ", timesteps.shape)
+        print("MASK:  ", mask.shape)
 
         return data
 
