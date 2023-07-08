@@ -15,7 +15,7 @@ from utils import get_file_path_from_config
 
 
 # Get experiment configuration
-exp_config, env, agent, accelerator = setup_script(mode='debug')
+exp_config, env, agent, accelerator = setup_script(mode='run')
 max_ep_len = 1000
 
 
@@ -97,19 +97,24 @@ print(model)
 training_args = TrainingArguments(
     output_dir="output/",
     remove_unused_columns=False,
-    num_train_epochs=2,
+    num_train_epochs=exp_config.epochs,
     per_device_train_batch_size=64,
     learning_rate=1e-4,
     weight_decay=1e-4,
     warmup_ratio=0.1,
     optim="adamw_torch",
     max_grad_norm=0.25,
+    save_steps=1,
+    logging_steps=1,
+    eval_steps=1,
+    # evaluation_strategy='steps',
 )
 
 trainer = Trainer(
     model=model,
     args=training_args,
     train_dataset=trajectory_dataset['train'],
+    eval_dataset=trajectory_dataset['val'],
     data_collator=data_collator,
 )
 
