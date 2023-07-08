@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from transformers import Trainer, TrainingArguments, DecisionTransformerConfig, DecisionTransformerModel
 import numpy as np
 import random
+from tqdm import tqdm
 from datasets import Dataset, DatasetDict
 
 
@@ -15,13 +16,18 @@ from utils import get_file_path_from_config
 
 
 
-def trajectories_to_dt_dataset_format(trajectories, num_states, num_actions):
+def trajectories_to_dt_dataset_format(trajectories, num_states, num_actions, max_ep_len):
     dataset_observations = []
     dataset_actions = []
     dataset_rewards = []
     dataset_dones = []
 
+    split_trajectories = []
     for trajectory in trajectories:
+        for i in range(len(trajectory) // max_ep_len):
+            split_trajectories.append(trajectory[i * max_ep_len: (i + 1) * max_ep_len])
+
+    for trajectory in tqdm(split_trajectories):
         observations = []
         actions = []
         rewards = []
@@ -189,6 +195,7 @@ class TrainableDT(DecisionTransformerModel):
 
 # Get experiment configuration
 exp_config, env, agent, accelerator = setup_script(mode='debug')
+max_ep_len = 1000
 
 
 
@@ -200,26 +207,33 @@ paths = glob.glob(data_path_pattern)
 paths.sort()
 
 # Load trajectories
+print("Loading trajectories...")
 trajectories = []
 for trajectory_path in paths:
     trajectory = load_pickle(trajectory_path)
     trajectories.append(trajectory)
 
 # Split into train and val sets
+print("Splitting into train and val sets...")
 train_val_split_ratio = 0.9
 train_trajectories = trajectories[:max(int(len(trajectories) * train_val_split_ratio), 1)]
 val_trajectories = trajectories[int(len(trajectories) * train_val_split_ratio):]
 
 # Get dataset of trajectories
+print("Setting up training set...")
 train_trajectory_data = trajectories_to_dt_dataset_format(
     train_trajectories,
     env.observation_space.n,
     env.action_space.n,
+    max_ep_len,
 )
+
+print("Setting up validation set...")
 val_trajectory_data = trajectories_to_dt_dataset_format(
     val_trajectories,
     env.observation_space.n,
     env.action_space.n,
+    max_ep_len,
 )
 
 train_trajectory_dataset = Dataset.from_dict(train_trajectory_data)
@@ -229,6 +243,7 @@ trajectory_dataset = DatasetDict({
     'train': train_trajectory_dataset,
     'val': val_trajectory_dataset,
 })
+print("Finished setting up datsets.")
 
 print("Dataset:", trajectory_dataset)
 print("Observations shape:", np.array(trajectory_dataset['train']['observations']).shape)
@@ -242,7 +257,7 @@ print("Dones shape:       ", np.array(trajectory_dataset['train']['dones']).shap
 # Get model
 model_config = DecisionTransformerConfig()
 
-model_config.max_length = exp_config.seq_len
+model_config.max_length = max_ep_len
 model_config.state_dim = env.observation_space.n
 model_config.act_dim = env.action_space.n
 model_config.max_ep_len = exp_config.training_steps

@@ -28,22 +28,26 @@ paths = glob.glob(data_path_pattern)
 paths.sort()
 
 # Load trajectories
+print("Loading trajectories...")
 trajectories = []
 for trajectory_path in paths:
     trajectory = load_pickle(trajectory_path)
     trajectories.append(trajectory)
 
 # Split into train and val sets
+print("Splitting into train and val sets...")
 train_val_split_ratio = 0.9
 train_trajectories = trajectories[:max(int(len(trajectories) * train_val_split_ratio), 1)]
 val_trajectories = trajectories[int(len(trajectories) * train_val_split_ratio):]
 
 # Datasets
+print("Setting up training set...")
 train_dataset = TrajectoryDataset(
     env,
     train_trajectories,
     seq_len=exp_config.seq_len
 )
+print("Setting up validation set...")
 val_dataset = TrajectoryDataset(
     env,
     val_trajectories,
@@ -62,6 +66,7 @@ val_data_loader = DataLoader(
     shuffle=True,
     drop_last=True,
 )
+print("Finished setting up datsets.")
 
 
 
