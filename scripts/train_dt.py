@@ -25,7 +25,8 @@ def trajectories_to_dt_dataset_format(trajectories, num_states, num_actions, max
     split_trajectories = []
     for trajectory in trajectories:
         for i in range(len(trajectory) // max_ep_len):
-            split_trajectories.append(trajectory[i * max_ep_len: (i + 1) * max_ep_len])
+            split_trajectory = trajectory[i * max_ep_len: (i + 1) * max_ep_len]
+            split_trajectories.append(split_trajectory)
 
     for trajectory in tqdm(split_trajectories):
         observations = []
@@ -36,13 +37,15 @@ def trajectories_to_dt_dataset_format(trajectories, num_states, num_actions, max
         for transition in trajectory:
             obs, act, rew, _ = transition
 
-            obs = F.one_hot(torch.LongTensor([obs]), num_classes=num_states).float()[0].detach().numpy()
-            act = F.one_hot(torch.LongTensor([act]), num_classes=num_actions).float()[0].detach().numpy()
-
             observations.append(obs)
             actions.append(act)
             rewards.append(rew)
             dones.append(False)
+
+        observations = F.one_hot(torch.LongTensor([observations]), num_classes=num_states).float()[0].detach().numpy()
+        actions = F.one_hot(torch.LongTensor([actions]), num_classes=num_actions).float()[0].detach().numpy()
+        rewards = np.array([rewards]).T
+        dones = np.array([dones]).T
         
         dataset_observations.append(observations)
         dataset_actions.append(actions)
@@ -78,7 +81,8 @@ class DecisionTransformerGymDataCollator:
         # calculate dataset stats for normalization of states
         states = []
         traj_lens = []
-        for obs in dataset["observations"]:
+        for i in tqdm(range(len(dataset))):
+            obs = dataset[i]["observations"]
             states.extend(obs)
             traj_lens.append(len(obs))
         self.n_traj = len(traj_lens)
@@ -243,13 +247,17 @@ trajectory_dataset = DatasetDict({
     'train': train_trajectory_dataset,
     'val': val_trajectory_dataset,
 })
-print("Finished setting up datsets.")
+print("Finished setting up datasets.")
 
 print("Dataset:", trajectory_dataset)
-print("Observations shape:", np.array(trajectory_dataset['train']['observations']).shape)
-print("Actions shape:     ", np.array(trajectory_dataset['train']['actions']).shape)
-print("Rewards shape:     ", np.array(trajectory_dataset['train']['rewards']).shape)
-print("Dones shape:       ", np.array(trajectory_dataset['train']['dones']).shape)
+print("Train set length:", len(train_trajectory_dataset[0]['observations']))
+print("Observations shape:", np.array(train_trajectory_dataset[0]['observations']).shape)
+print("Actions shape:     ", np.array(train_trajectory_dataset[0]['actions']).shape)
+print("Rewards shape:     ", np.array(train_trajectory_dataset[0]['rewards']).shape)
+print("Dones shape:       ", np.array(train_trajectory_dataset[0]['dones']).shape)
+
+data_collator = DecisionTransformerGymDataCollator(trajectory_dataset['train'])
+print("Finished data processing.")
 
 
 
@@ -285,7 +293,7 @@ trainer = Trainer(
     model=model,
     args=training_args,
     train_dataset=trajectory_dataset['train'],
-    data_collator=DecisionTransformerGymDataCollator(trajectory_dataset['train']),
+    data_collator=data_collator,
 )
 
 trainer.train()
