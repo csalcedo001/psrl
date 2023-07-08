@@ -110,6 +110,56 @@ class DecisionTransformerDataset(Dataset):
         }
 
 
+
+class TrajectoryTransformerDataset(Dataset):
+    def __init__(self, env, raw_trajectories, seq_len=64, stride=None):
+        if seq_len % 2 != 0:
+            raise ValueError("seq_len must be even")
+
+        self.seq_len = seq_len
+        self.missing_token = env.observation_space.n + env.action_space.n
+
+        if stride == None:
+            stride = seq_len // 4
+        self.stride = stride
+        
+        # We assume all trajectories have same length
+        trajectories = []
+        for raw_trajectory in raw_trajectories:
+            trajectory = []
+            for s, a, _, _ in raw_trajectory:
+                trajectory.append(s + env.action_space.n)
+                trajectory.append(a)
+                trajectory.append(0) # reward
+                trajectory.append(0) # reward to go
+
+            trajectories.append(trajectory)
+        
+        self.trajectories = trajectories
+
+        self.trajectory_num_idxs = ((len(self.trajectories[0]) - self.seq_len) // 4 - 1) // self.stride
+        self.dataset_num_idxs = len(self.trajectories) * self.trajectory_num_idxs
+    
+    def get_vocab_size(self):
+        return self.missing_token + 1
+
+    def __len__(self):
+        return self.dataset_num_idxs
+    
+    def __getitem__(self, idx):
+        # Get trajectory of length seq_len
+        traj_idx = idx // self.trajectory_num_idxs
+        step_idx = idx % self.trajectory_num_idxs
+
+        start_idx = 4 * step_idx * self.stride
+        end_idx = start_idx + self.seq_len
+
+        x = torch.LongTensor(self.trajectories[traj_idx][start_idx : end_idx])
+        y = torch.LongTensor(self.trajectories[traj_idx][start_idx + 4 : end_idx + 4])
+
+        return x, y
+
+
 # Prepares data to be fed to data collator
 def trajectories_to_dt_dataset_format(trajectories, num_states, num_actions, max_ep_len):
     dataset_observations = []
