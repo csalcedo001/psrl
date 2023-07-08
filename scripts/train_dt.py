@@ -42,8 +42,15 @@ def trajectories_to_dt_dataset_format(trajectories, num_states, num_actions, max
             rewards.append(rew)
             dones.append(False)
 
-        observations = F.one_hot(torch.LongTensor([observations]), num_classes=num_states).float()[0].detach().numpy()
-        actions = F.one_hot(torch.LongTensor([actions]), num_classes=num_actions).float()[0].detach().numpy()
+        
+        observations_idx = observations
+        observations = np.zeros((max_ep_len, num_states))
+        observations[np.arange(max_ep_len), observations_idx]
+
+        actions_idx = actions
+        actions = np.zeros((max_ep_len, num_actions))
+        actions[np.arange(max_ep_len), actions_idx]
+
         rewards = np.array([rewards]).T
         dones = np.array([dones]).T
         
