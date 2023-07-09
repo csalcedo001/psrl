@@ -78,6 +78,9 @@ model_config = GPT2Config()
 model_config.vocab_size = vocab_size
 model_config.n_positions = exp_config.seq_len
 model_config.n_ctx = exp_config.seq_len
+model_config.n_layer = exp_config.model.n_layer
+model_config.n_head = exp_config.model.n_head
+model_config.n_embd = exp_config.model.n_embd
 
 model = GPT2LMHeadModel(model_config)
 
@@ -85,16 +88,23 @@ model = GPT2LMHeadModel(model_config)
 
 # Training
 model.train()
-optimizer = torch.optim.Adam(model.parameters(), lr=exp_config.lr)
+optimizer = torch.optim.Adam(model.parameters(), lr=exp_config.lr, **exp_config.adam)
+scheduler = torch.optim.lr_scheduler.OneCycleLR(
+    optimizer,
+    steps_per_epoch=len(train_data_loader),
+    epochs=exp_config.epochs,
+    **exp_config.lr_scheduler,
+)
 criterion = torch.nn.CrossEntropyLoss()
 
-model, optimizer, train_data_loader, val_data_loader = accelerator.prepare(model, optimizer, train_data_loader, val_data_loader)
+model, optimizer, train_data_loader, val_data_loader, scheduler = accelerator.prepare(model, optimizer, train_data_loader, val_data_loader, scheduler)
 
 # Define metrics
 wandb.define_metric('iteration')
 wandb.define_metric('epoch')
 
 wandb.define_metric('train/batch_loss', step_metric='iteration')
+wandb.define_metric('train/lr', step_metric='iteration')
 wandb.define_metric('train/loss', step_metric='epoch')
 wandb.define_metric('val/loss', step_metric='epoch')
 wandb.define_metric('val/accuracy', step_metric='epoch')
@@ -131,12 +141,14 @@ for epoch in range(exp_config.epochs):
         accelerator.backward(loss)
 
         optimizer.step()
+        scheduler.step()
         optimizer.zero_grad()
 
         # Log batch metrics
         metrics['train/batch_loss'].append(loss.item())
         wandb.log({
             'train/batch_loss': loss.item(),
+            'train/lr': scheduler.get_last_lr()[0],
             'iteration': total_train_iter,
         })
 
