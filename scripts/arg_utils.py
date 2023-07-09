@@ -78,6 +78,7 @@ def get_parser():
     parser.add_argument('--batch-size', type=int, default=None, help='Training batch size')
     parser.add_argument('--lr', type=float, default=None, help='Training learning rate')
     parser.add_argument('--max-lr', type=float, default=None, help='Training maximum learning rate for OneCycleLR')
+    parser.add_argument('--pct-start', type=float, default=None, help='Training fraction of steps to increase learning rate for OneCycleLR')
     parser.add_argument('--anneal-strategy', type=str, default=None, help='Training anneal strategy for OneCycleLR')
     parser.add_argument('--beta1', type=float, default=None, help='Training beta1 for ADAM optimizer')
     parser.add_argument('--beta2', type=float, default=None, help='Training beta2 for ADAM optimizer')

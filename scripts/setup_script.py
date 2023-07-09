@@ -53,14 +53,17 @@ def get_experiment_config(args):
     if args.max_lr is not None:
         exp_config.lr_scheduler.max_lr = args.max_lr
     
+    if args.pct_start is not None:
+        exp_config.lr_scheduler.pct_start = args.pct_start
+    
     if args.anneal_strategy is not None:
         exp_config.lr_scheduler.anneal_strategy = args.anneal_strategy
     
     if args.beta1 is not None:
-        exp_config.adam[0] = args.beta1
+        exp_config.adam.betas[0] = args.beta1
     
     if args.beta2 is not None:
-        exp_config.adam[1] = args.beta2
+        exp_config.adam.betas[1] = args.beta2
     
     if args.weight_decay is not None:
         exp_config.adam.weight_decay = args.weight_decay
