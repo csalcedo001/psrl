@@ -1,7 +1,7 @@
 # Description: Configuration file for the experiment
 
 # Setup parameters
-seed: 2
+seed: 0
 
 # Environment and agent parameters
 env: tworoom
@@ -10,13 +10,24 @@ gamma: 0.99
 no_goal: True
 
 # Data generation parameters
-training_steps: 100
+training_steps: 1000000
 
 # Transformer training parameters
-epochs: 2
-batch_size: 64
-lr: 0.001
-seq_len: 32
+epochs: 100
+batch_size: 256
+lr: 0.0001
+seq_len: 50
+lr_scheduler:
+  max_lr: 0.0006
+  pct_start: 0.1
+  anneal_strategy: 'cos'
+adam:
+  betas: [0.9, 0.999]
+  weight_decay: 0.1
+model:
+  n_layer: 6
+  n_head: 8
+  n_embd: 128
 
 # Options
 num_options: 4
