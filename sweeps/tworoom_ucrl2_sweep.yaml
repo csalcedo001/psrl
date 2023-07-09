@@ -1,0 +1,32 @@
+program: scripts/train_transformer.py
+method: bayes
+metric:
+  name: val/last_action_accuracy
+  goal: maximize
+parameters:
+  batch-size:
+    values: [128, 256, 512]
+  lr:
+    min: 0.00001
+    max: 0.001
+  max-lr:
+    min: 0.0001
+    max: 0.001
+  pct-start:
+    min: 0.05
+    max: 0.5
+  beta2:
+    min: 0.95
+    max: 0.999
+  weight-decay:
+    min: 0.01
+    max: 0.1
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - "--config"
+  - "configs/tworoom_ucrl2.yaml"
+  - "--exp-naming-strategy"
+  - "sweep"
+  - ${args}
