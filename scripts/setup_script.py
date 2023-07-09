@@ -42,6 +42,27 @@ def get_experiment_config(args):
     if args.goal_reward is not None:
         exp_config.no_goal = args.goal_reward == 0
     
+    if args.batch_size is not None:
+        exp_config.batch_size = args.batch_size
+
+    if args.lr is not None:
+        exp_config.lr = args.lr
+    
+    if args.max_lr is not None:
+        exp_config.lr_scheduler.max_lr = args.max_lr
+    
+    if args.anneal_strategy is not None:
+        exp_config.lr_scheduler.anneal_strategy = args.anneal_strategy
+    
+    if args.beta1 is not None:
+        exp_config.adam[0] = args.beta1
+    
+    if args.beta2 is not None:
+        exp_config.adam[1] = args.beta2
+    
+    if args.weight_decay is not None:
+        exp_config.adam.weight_decay = args.weight_decay
+    
     data_dir, plots_dir = load_dirs_from_env()
 
     exp_config.data_dir = data_dir
