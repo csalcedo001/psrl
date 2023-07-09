@@ -40,6 +40,15 @@ def set_seed(seed: int = 0) -> None:
     os.environ["PYTHONHASHSEED"] = str(seed)
     print(f"Random seed set as {seed}")
 
+def get_experiment_dir_from_config(exp_config):
+    if exp_config.exp_naming_strategy == 'default':
+        experiment_dir = '{env}_{agent}_{training_steps}_{seed:0>4}'.format(**exp_config)
+    elif exp_config.exp_naming_strategy == 'sweep':
+        experiment_dir = '{env}_{agent}_{training_steps}_{seed:0>4}_{hash}'.format(**exp_config)
+    else:
+        raise ValueError(f"Unknown experiment naming strategy {exp_config.exp_naming_strategy}. Choose from 'default' or 'sweep'")
+    return experiment_dir
+
 def get_experiment_path_from_config(exp_config, mkdir=False, root_type='data'):
     if root_type == 'data':
         root = exp_config.data_dir
@@ -48,7 +57,8 @@ def get_experiment_path_from_config(exp_config, mkdir=False, root_type='data'):
     else:
         raise ValueError(f"Unknown root directory type {root_type}. Choose from 'data' or 'plots'")
 
-    experiment_dir = '{env}_{agent}_{training_steps}_{seed:0>4}'.format(**exp_config)
+    experiment_dir = get_experiment_dir_from_config(exp_config)
+
     experiment_path = os.path.join(root, experiment_dir)
     path_is_pattern = '*' in experiment_path
     

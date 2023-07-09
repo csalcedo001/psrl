@@ -72,6 +72,7 @@ def get_parser():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--config', type=str, default=None, help='Path to experiment configuration file', required=True)
+    parser.add_argument('--exp-naming-strategy', type=str, default=None, help='Strategy to choose naming convention for experiments')
     parser.add_argument('--seed', type=int, default=None, help='Random seed')
     parser.add_argument('--goal-reward', type=int, default=None, help='Reward for achieving goal')
     parser.add_argument('--batch-size', type=int, default=None, help='Training batch size')

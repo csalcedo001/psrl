@@ -10,19 +10,21 @@ from setup_script import setup_script
 from file_system import load_pickle, save_pickle
 from trajectory_dataset import TrajectoryDataset
 from metrics import compute_metrics
-from utils import get_file_path_from_config
+from utils import get_file_path_from_config, get_experiment_dir_from_config
 
 
 
 
 # Setup script
 exp_config, env, _, accelerator = setup_script()
+print('Experiment dir: ', get_experiment_dir_from_config(exp_config))
 
 
 
 # Get dataset of trajectories
 data_config_pattern = copy.deepcopy(exp_config)
 data_config_pattern.seed = '****'
+data_config_pattern.exp_naming_strategy = 'default'
 data_path_pattern = get_file_path_from_config('trajectories.pkl', data_config_pattern)
 paths = glob.glob(data_path_pattern)
 paths.sort()
@@ -183,7 +185,7 @@ for epoch in range(exp_config.epochs):
     
     # Save checkpoint every 5 epochs
     if (epoch - 1) % 10 == 0:
-        checkpoints_dir = get_file_path_from_config('checkpoints', exp_config)
+        checkpoints_dir = get_file_path_from_config('checkpoints', exp_config, mkdir=True)
         accelerator.save_state(checkpoints_dir)
 
         metrics_path = get_file_path_from_config('metrics.pkl', exp_config, mkdir=True)

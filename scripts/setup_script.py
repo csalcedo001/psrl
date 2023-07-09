@@ -1,11 +1,13 @@
 import os
 import re
+import json
 import random
 import numpy as np
 import torch
 from dotenv import load_dotenv
 from accelerate import Accelerator
 import wandb
+import hashlib
 
 from psrl.config import get_env_config, get_agent_config
 from psrl.utils import env_name_map, agent_name_map
@@ -63,6 +65,15 @@ def get_experiment_config(args):
     if args.weight_decay is not None:
         exp_config.adam.weight_decay = args.weight_decay
     
+
+    
+    if args.exp_naming_strategy is None:
+        args.exp_naming_strategy = 'default'
+    if args.exp_naming_strategy not in ['default', 'sweep']:
+        raise ValueError("Invalid experiment naming strategy. Must be one of: ['default', 'sweep']")
+    exp_config.exp_naming_strategy = args.exp_naming_strategy
+
+    
     data_dir, plots_dir = load_dirs_from_env()
 
     exp_config.data_dir = data_dir
@@ -71,6 +82,11 @@ def get_experiment_config(args):
     if not exp_config.no_goal:
         exp_config.data_dir = os.path.join(exp_config.data_dir, 'regret_plot')
         exp_config.plots_dir = os.path.join(exp_config.plots_dir, 'regret_plot')
+    
+
+    # Unique config identifier
+    exp_config.hash = hashlib.md5(json.dumps(exp_config.toDict()).encode()).hexdigest()[:8]
+
 
     return exp_config
 
