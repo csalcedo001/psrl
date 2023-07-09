@@ -7,6 +7,7 @@ def train_episode(env, agent, render=False, verbose=False, max_steps=100, pbar=N
     
     agent.reset(state)
 
+    external_pbar = pbar is not None
     if pbar is None:
         pbar = tqdm(total=max_steps)
 
@@ -41,7 +42,8 @@ def train_episode(env, agent, render=False, verbose=False, max_steps=100, pbar=N
             
         state = next_state
     
-    pbar.close()
+    if not external_pbar:
+        pbar.close()
     
     return trajectory
 
@@ -54,5 +56,7 @@ def train(env, agent, config, render=False, verbose=False, max_steps=100, add_in
     while pbar.n < max_steps:
         agent_trajectory = train_episode(env, agent, render, verbose, max_steps, pbar=pbar, add_info=add_info)
         agent_trajectories += agent_trajectory
+    
+    pbar.close()
     
     return agent_trajectories

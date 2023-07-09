@@ -5,7 +5,8 @@ def rollout_episode(env, agent, render=False, verbose=False, max_steps=100, pbar
     if render:
         env.render()
 
-    if pbar is None:
+    external_pbar = pbar is not None
+    if not external_pbar:
         pbar = tqdm(total=max_steps)
 
     trajectory = []
@@ -35,7 +36,8 @@ def rollout_episode(env, agent, render=False, verbose=False, max_steps=100, pbar
 
         state = next_state
     
-    pbar.close()
+    if not external_pbar:
+        pbar.close()
     
     return trajectory
 
@@ -48,5 +50,7 @@ def rollout(env, agent, config, render=False, verbose=False, max_steps=100, add_
     while pbar.n < max_steps:
         agent_trajectory = rollout_episode(env, agent, render, verbose, max_steps, pbar=pbar, add_info=add_info)
         agent_trajectories += agent_trajectory
+    
+    pbar.close()
     
     return agent_trajectories
