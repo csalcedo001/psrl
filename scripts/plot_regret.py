@@ -26,12 +26,13 @@ _ = setup_experiment(exp_config, mode='plot')
 
 # Get env and agent
 env = get_environment(exp_config)
+print(exp_config)
 
 
 
 
 # Get agent data
-agents = ['psrl', 'ucrl2', 'kl_ucrl']
+agents = ['ucrl2', 'kl_ucrl']
 
 agent_regrets = {}
 for agent in agents:
@@ -39,7 +40,7 @@ for agent in agents:
 
     agent_regrets[agent] = []
 
-    for seed in range(3):
+    for seed in range(10):
         exp_config.seed = seed
 
 
@@ -82,11 +83,11 @@ os.makedirs(file_dir, exist_ok=True)
 save_regret_plot(
     agent_regrets,
     os.path.join(file_dir, 'regret.png'),
-    title='Exploration Regret',
+    title='Regret for Exploration Algorithms',
 )
 save_regret_plot(
     agent_regrets,
     os.path.join(file_dir, 'regret_log_log.png'),
-    title='Exploration Regret',
+    title='Regret for Exploration Algorithms',
     log_scale=True,
 )
