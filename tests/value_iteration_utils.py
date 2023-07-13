@@ -20,16 +20,16 @@ def brute_force_policy_evaluation(p, r, pi, gamma, epsilon, max_iter):
 
         for s in range(n_s):
             for a in range(n_a):
-                if gamma < 1:
+                # if gamma < 1:
                     v_next[s] += pi[s, a] * np.sum([
                         p[s, a, s_] * (r[s, a] + gamma * v[s_])
                         for s_ in range(n_s)
                     ])
-                elif gamma == 1:
-                    v_next[s] += pi[s, a] * np.sum([
-                        p[s, a, s_] * (r[s, a] - avg_r + v[s_]) 
-                        for s_ in range(n_s)
-                    ])
+                # elif gamma == 1:
+                #     v_next[s] += pi[s, a] * np.sum([
+                #         p[s, a, s_] * (r[s, a] - avg_r + v[s_]) 
+                #         for s_ in range(n_s)
+                #     ])
             
             diff = abs(v_next[s] - v[s])
             delta = max(diff, delta)
@@ -120,6 +120,24 @@ def average_reward_policy_evaluation(p, r, pi, epsilon, max_iter):
     v_pi = (np.linalg.inv(np.eye(*P_pi.shape) - P_pi + P_star_pi) - P_star_pi) @ R_pi
 
     return v_pi
+
+def average_reward_value_iteration_on_s(p, r, rho_star, s_tilde, epsilon, max_iter):
+    r_hat = r - rho_star
+    
+    n_s = p.shape[0]
+
+    v = np.zeros(n_s)
+    for i in range(max_iter):
+        v_ = v
+
+        v = np.max(r_hat + np.einsum('ijk,k->ij', p, v), axis=1)
+        v[s_tilde] = 0
+
+        if np.abs(v_ - v).max() <= epsilon:
+            break
+    
+    return v
+        
 
 def compute_gain(p, r, pi, epsilon, max_iter):
     P_pi = np.einsum('ijk,ij->ik', p, pi)

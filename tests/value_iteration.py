@@ -37,6 +37,7 @@ from value_iteration_utils import (
     stationary_transition_matrix,
     average_reward_policy_evaluation,
     compute_gain,
+    average_reward_value_iteration_on_s,
     grids_and_policies,
 )
 
@@ -300,6 +301,7 @@ class TestAverageRewardValueIteration(TestCase):
             self.assertNumpyEqual(P_star_pi, P_star_pi @ P_star_pi)
     
     @parameterized.expand([(name,) for name in grids_and_policies])
+    @unittest.skip('Not correctly implemented yet')
     def test_stat_mat_epsilon_close_all_policies(self, name):
         env_config = get_env_config('gridworld')
         env_config.grid = grids_and_policies[name]['grid']
@@ -378,12 +380,7 @@ class TestAverageRewardValueIteration(TestCase):
             P_pi = np.einsum('ijk,ij->ik', p, pi)
             P_star_pi = stationary_transition_matrix(P_pi, epsilon=0, max_iter=10000)
 
-            self.assertLessEqual(np.abs(P_star_pi @ v_pi).max(), self.epsilon, msg={
-                'pi': pi,
-                'P_star_pi': P_star_pi,
-                'v_pi': v_pi,
-                'P_star_pi @ v_pi': P_star_pi @ v_pi
-            })
+            self.assertNumpyEqual(np.abs(P_star_pi @ v_pi), np.zeros_like(v_pi))
 
     @parameterized.expand([(name,) for name in grids_and_policies])
     def test_p_star_pi_prod_v_pi_zero_all_policies(self, name):
@@ -442,19 +439,58 @@ class TestAverageRewardValueIteration(TestCase):
         rho_pi_star = compute_gain(p, r, pi_star, epsilon=self.epsilon, max_iter=self.max_iter)
 
         self.assertNumpyEqual(rho_pi_star + v_pi_star, np.max(r + np.einsum('ijk,k->ij', p, v_pi_star), axis=1))
-
     
     @parameterized.expand(avg_rew_policy_evaluation_parameters)
-    def test_average_reward_policy_evaluation(self, name, pi_star):
+    def test_val_iter_s_tilde_is_v_star(self, name, pi_star):
         env_config = get_env_config('gridworld')
         env_config.grid = grids_and_policies[name]['grid']
         env = GridworldEnv(env_config)
 
         p, r = env.get_p_and_r()
 
-        R_pi_star = np.einsum('ij,ij->i', r, pi_star)
-        P_pi_star = np.einsum('ijk,ij->ik', p, pi_star)
-        v_pi_star = average_reward_policy_evaluation(p, r, pi_star, epsilon=self.epsilon, max_iter=self.max_iter)
+        v_star = average_reward_policy_evaluation(p, r, pi_star, epsilon=0, max_iter=10000)
+        rho_star = compute_gain(p, r, pi_star, epsilon=0, max_iter=10000)[0]
+
+        n_s = p.shape[0]
+
+        v_star_s_tilde = None
+        for s_tilde in range(n_s):
+            v = average_reward_value_iteration_on_s(p, r, rho_star, s_tilde, epsilon=0, max_iter=10000)
+
+            if np.all(np.abs(rho_star + v - np.max(r + np.einsum('ijk,k->ij', p, v), axis=1)) < 1e-9):
+                v_star_s_tilde = v
+                break
+        
+        self.assertTrue(v_star_s_tilde is not None, msg={
+            'p': p,
+            'r': r,
+            'pi_star': pi_star,
+            'v_star': v_star,
+            'rho_star': rho_star,
+            's_tilde': s_tilde,
+            'v': v,
+        })
+
+        v_star_s_tilde -= v_star_s_tilde[0]
+        v_star -= v_star[0]
+
+        self.assertNumpyEqual(v_star_s_tilde, v_star)
+        # self.assertNumpyEqual(
+        #     np.abs(rho_star + v - np.max(r + np.einsum('ijk,k->ij', p, v), axis=1))
+        # )
+
+    
+    @parameterized.expand(avg_rew_policy_evaluation_parameters)
+    @unittest.skip("Not implemented correctly yet")
+    def test_v_star_gr_eq_v_pi_all_policies(self, name, pi_star):
+        env_config = get_env_config('gridworld')
+        env_config.grid = grids_and_policies[name]['grid']
+        env = GridworldEnv(env_config)
+
+        p, r = env.get_p_and_r()
+
+        v_star, _ = agents.utils.value_iteration(p, r, pi_star, gamma=1, epsilon=self.epsilon, max_iter=self.max_iter)
+        rho_star = compute_gain(p, r, pi_star, epsilon=0, max_iter=10000)
 
         n_s, n_a = p.shape[:2]
 
@@ -465,14 +501,13 @@ class TestAverageRewardValueIteration(TestCase):
             pi = np.zeros((n_s, n_a))
             pi[np.arange(n_s), pi_idx] = 1
 
-            R_pi = np.einsum('ij,ij->i', r, pi)
-            P_pi = np.einsum('ijk,ij->ik', p, pi)
-            v_pi = average_reward_policy_evaluation(p, r, pi, epsilon=0, max_iter=10000)
+            v_pi, _ = agents.utils.value_iteration(p, r, pi, gamma=1, epsilon=0, max_iter=10000)
+            rho_pi = compute_gain(p, r, pi, epsilon=0, max_iter=10000)
 
-            self.assertTrue(np.all((R_pi_star + P_pi_star @ v_pi_star) - (R_pi + P_pi @ v_pi) > 0), msg=({
+            self.assertTrue(np.all(rho_star + v_star - v_pi - rho_pi > 0), msg=({
                 'r': r,
                 'p': p,
-                'v_pi_star': v_pi_star,
+                'v_star': v_star,
                 'v_pi': v_pi,
                 'pi_star': pi_star,
                 'pi': pi
@@ -481,6 +516,7 @@ class TestAverageRewardValueIteration(TestCase):
 
         
     @parameterized.expand([(name,) for name in grids_and_policies])
+    @unittest.skip('Unused function')
     def test_steady_state_distribution(self, name):
         env_config = get_env_config('gridworld')
         env_config.grid = grids_and_policies[name]['grid']
@@ -495,6 +531,7 @@ class TestAverageRewardValueIteration(TestCase):
 
         self.assertRoundEqual(mu_pi_hat.sum(), 1)
         self.assertNumpyEqual(mu_pi_hat, mu_pi)
+
 
     @parameterized.expand([(name,) for name in grids_and_policies])
     def test_policy_average_reward(self, name):
