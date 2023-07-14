@@ -159,14 +159,18 @@ disc_policy_evaluation_parameters = [
     (name, pi, gamma)
     for name in grids_and_policies
     for pi in grids_and_policies[name]['optimal_policies']
-    for gamma in [1.0, 0.9]
+    for gamma in [
+        # 1,       # In general, this shouldn't be a valid value for gamma
+        0.99, 
+        0.9,
+    ]
 ]
 disc_value_iteration_parameters = [
     (name, gamma)
     for name in grids_and_policies
     for gamma in [
         # 1,       # In general, this shouldn't be a valid value for gamma
-        0,99,
+        0.99,
         0.9,
     ]
 ]
@@ -201,7 +205,7 @@ class TestDiscountedValueIteration(TestCase):
 
     
     @parameterized.expand(disc_value_iteration_parameters)
-    def test_value_iteration_value_function(self, name, gamma):
+    def test_val_iter_v_star_hat_epsilon_close(self, name, gamma):
         env_config = get_env_config('gridworld')
         env_config.grid = grids_and_policies[name]['grid']
         env = GridworldEnv(env_config)
@@ -228,7 +232,11 @@ class TestDiscountedValueIteration(TestCase):
         v_hat = q_hat.max(axis=1)
 
         diff = np.abs(v_hat - v).max()
-        self.assertTrue(diff < 2 * self.epsilon, msg=(diff, self.epsilon))
+        self.assertTrue(diff < 2 * self.epsilon, msg={
+            'pi': pi,
+            'v': v,
+            'v_hat': v_hat,
+        })
 
 
     
@@ -260,7 +268,12 @@ class TestDiscountedValueIteration(TestCase):
         v_hat = brute_force_policy_evaluation(pi=pi_hat, **args)
 
         diff = np.abs(v_hat - v).max()
-        self.assertTrue(diff < 2 * self.epsilon, msg=(diff, self.epsilon))
+        self.assertTrue(diff < 2 * self.epsilon, msg={
+            'pi': pi,
+            'v': v,
+            'pi_hat': pi_hat,
+            'v_hat': v_hat,
+        })
 
 
 

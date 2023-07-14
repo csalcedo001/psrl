@@ -15,21 +15,20 @@ def brute_force_policy_evaluation(p, r, pi, gamma, epsilon, max_iter):
         # Initialize to 0
         delta = 0
         v_next = np.zeros(n_s)
-
-        avg_r = get_policy_average_reward(p, r, pi)
+        # q = np.zeros((n_s, n_a))
 
         for s in range(n_s):
             for a in range(n_a):
-                # if gamma < 1:
-                    v_next[s] += pi[s, a] * np.sum([
-                        p[s, a, s_] * (r[s, a] + gamma * v[s_])
-                        for s_ in range(n_s)
-                    ])
-                # elif gamma == 1:
-                #     v_next[s] += pi[s, a] * np.sum([
-                #         p[s, a, s_] * (r[s, a] - avg_r + v[s_]) 
-                #         for s_ in range(n_s)
-                #     ])
+                v_next[s] += pi[s, a] * np.sum([
+                    p[s, a, s_] * (r[s, a] + gamma * v[s_])
+                    for s_ in range(n_s)
+                ])
+                # q[s, a] = r[s, a] + np.sum([
+                #     p[s, a, s_] * gamma * v[s_]
+                #     for s_ in range(n_s)
+                # ])
+
+                # v_next[s] += pi[s, a] * q[s, a]
             
             diff = abs(v_next[s] - v[s])
             delta = max(diff, delta)
