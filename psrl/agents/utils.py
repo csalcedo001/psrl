@@ -15,11 +15,8 @@ def policy_evaluation(p, r, pi, gamma=0.99, epsilon=1e-2, max_iter=100):
 
     if len(r.shape) == 3:
         r = r.mean(axis=2)
-
-
-    # avg_r = get_policy_average_reward(p, r, pi)
     
-    for i in range(int(max_iter)):
+    for t in range(int(max_iter)):
         q = r + np.einsum('ijk, k -> ij', p, gamma * v)
         v_ = np.einsum('ij, ij -> i', pi, q)        # equivalent to np.sum(pi * q, axis=1)
 
@@ -59,11 +56,10 @@ def extended_value_iteration(p, r, cb_p=None, cb_r=None, gamma=0.99, epsilon=1e-
     r_tilde = r
     if not is_value_iteration:
         r_tilde += cb_r
-    # r_tilde = np.clip(r_tilde, None, 1)       # Why would this be necessary?
     
     pi = np.zeros((n_s), dtype=int)
 
-    for i in range(int(max_iter)):
+    for t in range(int(max_iter)):
         # Compute p tilde
         if is_value_iteration:
             p_tilde = p
@@ -78,19 +74,19 @@ def extended_value_iteration(p, r, cb_p=None, cb_r=None, gamma=0.99, epsilon=1e-
         # Compute policy pi
         q = r_tilde + np.einsum('ijk, k -> ij', p_tilde, gamma * v)
         pi_ = np.argmax(q, axis=1)
-        # v_ = np.max(q, axis=1) / max(i, 1)
         v_ = np.max(q, axis=1)
 
         diff = v_ - v
-        v = v_
 
         udpate_idx = diff > 0
         pi[udpate_idx] = pi_[udpate_idx]
 
         if gamma < 1 and np.abs(diff).max() < epsilon:
             break
-        elif gamma == 1 and np.all(pi == pi_):
+        elif gamma == 1 and np.abs(diff).max() - np.abs(diff).min() < epsilon:
             break
+
+        v = v_
 
     return pi, (v, q, p_tilde, r_tilde)
 

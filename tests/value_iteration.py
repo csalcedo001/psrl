@@ -205,7 +205,7 @@ class TestDiscountedValueIteration(TestCase):
 
     
     @parameterized.expand(disc_value_iteration_parameters)
-    def test_val_iter_v_star_hat_epsilon_close(self, name, gamma):
+    def test_value_iter_v_star_hat_epsilon_close(self, name, gamma):
         env_config = get_env_config('gridworld')
         env_config.grid = grids_and_policies[name]['grid']
         env = GridworldEnv(env_config)
@@ -454,7 +454,7 @@ class TestAverageRewardValueIteration(TestCase):
         self.assertNumpyEqual(rho_pi_star + v_pi_star, np.max(r + np.einsum('ijk,k->ij', p, v_pi_star), axis=1))
     
     @parameterized.expand(avg_rew_policy_evaluation_parameters)
-    def test_val_iter_s_tilde_is_v_star(self, name, pi_star):
+    def test_value_iter_s_tilde_is_v_star(self, name, pi_star):
         env_config = get_env_config('gridworld')
         env_config.grid = grids_and_policies[name]['grid']
         env = GridworldEnv(env_config)
@@ -488,9 +488,48 @@ class TestAverageRewardValueIteration(TestCase):
         v_star -= v_star[0]
 
         self.assertNumpyEqual(v_star_s_tilde, v_star)
-        # self.assertNumpyEqual(
-        #     np.abs(rho_star + v - np.max(r + np.einsum('ijk,k->ij', p, v), axis=1))
-        # )
+    
+    @parameterized.expand(avg_rew_policy_evaluation_parameters)
+    @unittest.skip('Not correctly implemented yet')
+    def test_value_iter_v_star_hat_is_v_star(self, name, pi_star):
+        env_config = get_env_config('gridworld')
+        env_config.grid = grids_and_policies[name]['grid']
+        env = GridworldEnv(env_config)
+
+        p, r = env.get_p_and_r()
+
+        v_star = average_reward_policy_evaluation(p, r, pi_star, epsilon=0, max_iter=10000)
+        
+        _, q_star_hat = agents.utils.value_iteration(p, r, gamma=1, epsilon=0, max_iter=10000)
+        v_star_hat = np.max(q_star_hat, axis=1)
+        
+        self.assertNumpyEqual(v_star_hat, v_star)
+    
+    @parameterized.expand(avg_rew_policy_evaluation_parameters)
+    def test_value_iter_pi_star_hat_is_pi_star(self, name, pi_star):
+        env_config = get_env_config('gridworld')
+        env_config.grid = grids_and_policies[name]['grid']
+        env = GridworldEnv(env_config)
+
+        p, r = env.get_p_and_r()
+
+        v_star = average_reward_policy_evaluation(p, r, pi_star, epsilon=0, max_iter=10000)
+
+        n_s, n_a = p.shape[:2]
+
+        pi_star_hat_idx, _ = agents.utils.value_iteration(p, r, gamma=1, epsilon=0, max_iter=10000)
+        pi_star_hat = np.zeros((n_s, n_a))
+        pi_star_hat[np.arange(n_s), pi_star_hat_idx] = 1
+        v_star_hat = average_reward_policy_evaluation(p, r, pi_star_hat, epsilon=0, max_iter=10000)
+
+        self.assertLessEqual(np.abs(v_star_hat - v_star).max(), 1e-9, msg={
+            'pi_star': pi_star,
+            'pi_star_hat': pi_star_hat,
+            'v_star': v_star,
+            'v_star_hat': v_star_hat,
+            'p': p,
+            'r': r,
+        })
 
     
     @parameterized.expand(avg_rew_policy_evaluation_parameters)
