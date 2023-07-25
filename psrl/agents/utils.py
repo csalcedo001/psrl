@@ -40,7 +40,7 @@ def value_iteration(*args, **kwargs):
 
     return pi, q
 
-def extended_value_iteration(p, r, cb_p=None, cb_r=None, gamma=0.99, epsilon=1e-2, max_iter=100):
+def extended_value_iteration(p, r, cb_p=None, cb_r=None, gamma=0.99, epsilon=1e-2, max_iter=100, tau=0.999):
     is_value_iteration = cb_p is None or cb_r is None
 
     n_s, n_a = p.shape[:2]
@@ -59,6 +59,9 @@ def extended_value_iteration(p, r, cb_p=None, cb_r=None, gamma=0.99, epsilon=1e-
     
     pi = np.zeros((n_s), dtype=int)
 
+    # Identity transition matrix (for Schweitzer transformation)
+    I_tran = np.tile(np.eye(n_s), (n_a, 1, 1)).transpose((1, 0, 2))
+
     for t in range(int(max_iter)):
         # Compute p tilde
         if is_value_iteration:
@@ -70,6 +73,9 @@ def extended_value_iteration(p, r, cb_p=None, cb_r=None, gamma=0.99, epsilon=1e-
             for s in range(n_s):
                 for a in range(n_a):
                     p_tilde[s, a] = inner_maximization(p[s, a], cb_p[s, a], p_s_order)
+        
+        # Apply Schweitzer transformation
+        p_tilde = tau * p_tilde + (1. - tau) * I_tran
 
         # Compute policy pi
         q = r_tilde + np.einsum('ijk, k -> ij', p_tilde, gamma * v)
@@ -81,12 +87,18 @@ def extended_value_iteration(p, r, cb_p=None, cb_r=None, gamma=0.99, epsilon=1e-
         udpate_idx = diff > 0
         pi[udpate_idx] = pi_[udpate_idx]
 
-        if gamma < 1 and np.abs(diff).max() < epsilon:
-            break
-        elif gamma == 1 and np.abs(diff).max() - np.abs(diff).min() < epsilon:
+        # TODO: why is the proof-verified condition not working for discounted case?
+        # Does the proof only work for average reward setup?
+        # if np.abs(diff).max() - np.abs(diff).min() < epsilon:
+        if np.abs(diff).max() < epsilon:
             break
 
         v = v_
+    
+    v *= tau
+
+    if gamma == 1:
+        v -= v[0]
 
     return pi, (v, q, p_tilde, r_tilde)
 

@@ -221,21 +221,21 @@ class TestDiscountedValueIteration(TestCase):
         }
 
         # Get an optimal policy and compute its value function
-        pi = grids_and_policies[name]['optimal_policies'][0]
-        v = brute_force_policy_evaluation(pi=pi, **args)
+        pi_star = grids_and_policies[name]['optimal_policies'][0]
+        v_star = brute_force_policy_evaluation(pi=pi_star, **args)
 
 
-        # Make sure the value function returned direction from value iteration
+        # Make sure the value function returned directly from value iteration
         # is the same as the one obtained by the optimal policy through
         # policy evaluation
-        _, q_hat = agents.utils.value_iteration(**args)
-        v_hat = q_hat.max(axis=1)
+        _, q_star_hat = agents.utils.value_iteration(tau=1, **args)
+        v_star_hat = q_star_hat.max(axis=1)
 
-        diff = np.abs(v_hat - v).max()
+        diff = np.abs(v_star - v_star_hat).max()
         self.assertTrue(diff < 2 * self.epsilon, msg={
-            'pi': pi,
-            'v': v,
-            'v_hat': v_hat,
+            'pi_star': pi_star,
+            'v_star': v_star,
+            'v_star_hat': v_star_hat,
         })
 
 
@@ -490,7 +490,6 @@ class TestAverageRewardValueIteration(TestCase):
         self.assertNumpyEqual(v_star_s_tilde, v_star)
     
     @parameterized.expand(avg_rew_policy_evaluation_parameters)
-    @unittest.skip('Not correctly implemented yet')
     def test_value_iter_v_star_hat_is_v_star(self, name, pi_star):
         env_config = get_env_config('gridworld')
         env_config.grid = grids_and_policies[name]['grid']
@@ -499,11 +498,21 @@ class TestAverageRewardValueIteration(TestCase):
         p, r = env.get_p_and_r()
 
         v_star = average_reward_policy_evaluation(p, r, pi_star, epsilon=0, max_iter=10000)
+        rho_star = compute_gain(p, r, pi_star, epsilon=0, max_iter=10000)[0]
         
-        _, q_star_hat = agents.utils.value_iteration(p, r, gamma=1, epsilon=0, max_iter=10000)
+        r_hat = r - rho_star
+        pi_star_hat, q_star_hat = agents.utils.value_iteration(p, r_hat, gamma=1, epsilon=0, max_iter=10000)
         v_star_hat = np.max(q_star_hat, axis=1)
-        
-        self.assertNumpyEqual(v_star_hat, v_star)
+
+        self.assertLessEqual(np.abs(v_star_hat - v_star).max(), 2 * self.epsilon, msg={
+            'epsilon': self.epsilon,
+            'pi_star': pi_star,
+            'pi_star_hat': pi_star_hat,
+            'v_star': v_star,
+            'v_star_hat': v_star_hat,
+            'p': p,
+            'r': r,
+        })
     
     @parameterized.expand(avg_rew_policy_evaluation_parameters)
     def test_value_iter_pi_star_hat_is_pi_star(self, name, pi_star):
