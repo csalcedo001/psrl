@@ -32,7 +32,7 @@ print(exp_config)
 
 
 # Get agent data
-agents = ['ucrl2', 'kl_ucrl']
+agents = ['psrl', 'ucrl2', 'kl_ucrl']
 
 agent_regrets = {}
 for agent in agents:
