@@ -82,9 +82,9 @@ def get_experiment_config(args):
     exp_config.data_dir = data_dir
     exp_config.plots_dir = plots_dir
 
-    if not exp_config.no_goal:
-        exp_config.data_dir = os.path.join(exp_config.data_dir, 'regret_plot')
-        exp_config.plots_dir = os.path.join(exp_config.plots_dir, 'regret_plot')
+    # if not exp_config.no_goal:
+    #     exp_config.data_dir = os.path.join(exp_config.data_dir, 'regret_plot')
+    #     exp_config.plots_dir = os.path.join(exp_config.plots_dir, 'regret_plot')
     
 
     # Unique config identifier
