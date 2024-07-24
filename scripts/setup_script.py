@@ -159,6 +159,12 @@ def get_agent(exp_config, env):
 def load_dirs_from_env():
     load_dotenv()
 
+    if 'DATA_DIR' not in os.environ:
+        raise ValueError("DATA_DIR must be set as environment variable")
+
+    if 'PLOTS_DIR' not in os.environ:
+        raise ValueError("PLOTS_DIR must be set as environment variable")
+
     # Directories MUST be set as environment variables
     data_dir = os.getenv("DATA_DIR")
     plots_dir = os.getenv("PLOTS_DIR")
