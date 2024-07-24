@@ -1,8 +1,22 @@
 # Posterior Sampling for Reinforcement Learning
 
-Implementation of PSRL from [the paper](https://proceedings.neurips.cc/paper/2013/hash/6a5889bb0190d0211a991f47bb19a777-Abstract.html):
+Replica of results from the
+[paper](https://proceedings.neurips.cc/paper/2013/hash/6a5889bb0190d0211a991f47bb19a777-Abstract.html)
+that introduces Posterior Sampling for Reinforcement Learning (PSRL) algorithm.
 
-Osband, I., Russo, D., & Van Roy, B. (2013). (More) efficient reinforcement learning via posterior sampling. Advances in Neural Information Processing Systems, 26.
+Osband, I., Russo, D., & Van Roy, B. (2013). (More) efficient reinforcement
+learning via posterior sampling. Advances in Neural Information Processing
+Systems, 26.
+
+The current codebase supports the following RL environemnts:
+
+- Random MDP
+- [RiverSwim](https://www.sciencedirect.com/science/article/pii/S0022000008000767)
+- [TwoRoom gridworld](https://arxiv.org/abs/2202.03466)
+- [FourRoom gridworld](https://arxiv.org/abs/2202.03466)
+
+![TwoRoom and FourRoom gridworld environments](assets/gridworlds.png)
+
 
 ## Installation
 
@@ -24,36 +38,96 @@ pip install -e .
 
 ## Running experiments
 
-Main executables:
-* scripts/plot_regret.py: plots like Figure 2 in the paper
-* scripts/gridworld_plots.py: plots and video of trajectory (gridworlds only)
-
-Additional:
-* scripts/train.py: the previous script perform training by default, so this script is just a proof-of-concept that training is done correctly. Note: Uses W&B by default
-
-Arguments:
-* agent: psrl, random_agent, or optimal
-* env: riverswim, randommdp, tworoom, or fourroom
-* experiment_name: used as folder name within runs/ to save the plots. Default: date and uuid.
-
-
-Run the following example command to get a plot of the regret of PSRL vs (so far) a random agent (soon UCRL2)
+To replicate all plots first run the optimization process for each agent and
+environment
 
 ```bash
-python scripts/plot_regret.py --experiment_name riverswim_regret --env riverswim --max_steps 10000
+python scripts/generate_data.py --config configs/riverswim_psrl.yaml --seed 0
 ```
 
-To get a video of the trajectory of an agent through a gridworld, run the next example command
+This script will produce files `agent.pkl` and `trajectories.pkl` which store
+the trained parameters of the optimized agent and the trajectories taken in the
+environment throughout the execution of the program. Choose between any of the
+configuration files in `config` folder to generate data specific for each
+experiment.
+
+The most straightforward way to obtain all data necessary for plots is to just
+run the following script
 
 ```bash
-python scripts/gridworld_plots.py --experiment_name psrl_tworoom --agent psrl --env tworoom
+. run_parallel.sh
 ```
 
-The script for training, train.py, can be run with the followiing command
+which launches all combinations of environments (riverswim, tworoom, fourroom),
+agents (psrl, ucrl, kl_ucrl), and seeds (10 in total, starting at 0) using
+`screen`.
 
+After all runs come to an end, you can obtain regret plots by running
 
 ```bash
-python scripts/train.py --experiment_name train_psrl_tworoom --agent psrl --env tworoom
+python scripts/plot_regret.py --config configs/regret_riverswim.yaml
 ```
 
-After running each of these commands, plots and data will be saved in a folder inside runs/, the default directory for results. The name can be set explicitly via --experiment_name or, in case omitted, is set to string composed of the current date and time, and a uuid.
+Switch between the following configs to obtain a regret plot for each
+environment:
+
+- configs/regret_riverswim.yaml
+- configs/regret_tworoom.yaml
+- configs/regret_fourroom.yaml
+
+With `configs/regret_riverswim.yaml` you should expect the following plot
+
+![Regret for Exploration Algorithms](assets/regret.png)
+
+Likewise, with a single run you can obtain agent-specific plots for
+gridworld environments by running
+
+```bash
+python scripts/plot_agent.py --config configs/tworoom_klucrl.yaml
+```
+
+Choose the right configuration to obtain a set of plots for any particular run.
+You should obtain all the following plots:
+
+- Action-value function
+- Empirical state visitation
+- Empirical total reward
+- Expected reward
+- Policy
+- State-value function
+
+For `configs/tworoom_klucrl.yaml` (after setting no_goal=False)
+you should expect the following
+- Action-value function
+  ![Action-value function](assets/tworoom_klucrl/action_value_function.png)
+- Empirical state visitations
+  ![Empirical state visitations](assets/tworoom_klucrl/empirical_state_visitation.png)
+- Empirical total reward
+  ![Empirical total reward](assets/tworoom_klucrl/empirical_total_reward.png)
+- Expected reward
+  ![Expected reward](assets/tworoom_klucrl/expected_reward.png)
+- Policy
+  ![Policy](assets/tworoom_klucrl/policy.png)
+- State-value function
+  ![State-value function](assets/tworoom_klucrl/state_value.png)
+
+
+For `configs/fourroom_klucrl.yaml` (after setting no_goal=False)
+you should expect the following
+- Action-value function
+  ![Action-value function](assets/fourroom_klucrl/action_value_function.png)
+- Empirical state visitations
+  ![Empirical state visitations](assets/fourroom_klucrl/empirical_state_visitation.png)
+- Empirical total reward
+  ![Empirical total reward](assets/fourroom_klucrl/empirical_total_reward.png)
+- Expected reward
+  ![Expected reward](assets/fourroom_klucrl/expected_reward.png)
+- Policy
+  ![Policy](assets/fourroom_klucrl/policy.png)
+- State-value function
+  ![State-value function](assets/fourroom_klucrl/state_value.png)
+
+
+## Disclaimer
+
+This project includes multiple other scripts that are undocumented. These were meant for a research project that was left unfinished, so they do not directly connect to the original paper. Likewise, there is no guarantee that results obtained from them produce any meaningful output yet.

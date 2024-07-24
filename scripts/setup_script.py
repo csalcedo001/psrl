@@ -82,9 +82,9 @@ def get_experiment_config(args):
     exp_config.data_dir = data_dir
     exp_config.plots_dir = plots_dir
 
-    if not exp_config.no_goal:
-        exp_config.data_dir = os.path.join(exp_config.data_dir, 'regret_plot')
-        exp_config.plots_dir = os.path.join(exp_config.plots_dir, 'regret_plot')
+    # if not exp_config.no_goal:
+    #     exp_config.data_dir = os.path.join(exp_config.data_dir, 'regret_plot')
+    #     exp_config.plots_dir = os.path.join(exp_config.plots_dir, 'regret_plot')
     
 
     # Unique config identifier
@@ -158,6 +158,12 @@ def get_agent(exp_config, env):
 
 def load_dirs_from_env():
     load_dotenv()
+
+    if 'DATA_DIR' not in os.environ:
+        raise ValueError("DATA_DIR must be set as environment variable")
+
+    if 'PLOTS_DIR' not in os.environ:
+        raise ValueError("PLOTS_DIR must be set as environment variable")
 
     # Directories MUST be set as environment variables
     data_dir = os.getenv("DATA_DIR")

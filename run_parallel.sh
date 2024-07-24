@@ -16,9 +16,10 @@ fi
 
 
 # Setup arrays
-envs=(tworoom fourroom)
+envs=(riverswim)
+# envs=(tworoom fourroom)
 agents=(psrl ucrl2 klucrl)
-seeds=(0)
+seeds=(0 1 2 3 4 5 6 7 8 9)
 IFS=',' read -r -a gpus <<< "$CUDA_VISIBLE_DEVICES"
 
 
