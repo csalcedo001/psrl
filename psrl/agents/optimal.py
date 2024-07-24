@@ -16,13 +16,13 @@ class OptimalAgent(Agent):
             max_iter=config.max_iter
         )
 
-    def reset(self, staet):
+    def reset(self, state):
         pass
     
     def act(self, state):
         return self.pi[state]
     
-    def observe(aelf, transition):
+    def observe(self, transition):
         pass
 
     def update(self):
